@@ -3,13 +3,16 @@ import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { 
   ArrowLeft, 
+  BarChart3,
+  Clock3,
   Heart, 
   Pill, 
   Dumbbell, 
   Apple, 
   Moon, 
   Smile,
-  Calendar
+  TrendingDown,
+  TrendingUp
 } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui';
 import { 
@@ -74,7 +77,13 @@ const trackerConfig: Record<string, {
   },
 };
 
-const trackerAPIs: Record<string, (params?: any, patientEmail?: string) => Promise<{ observations: TrackerObservation[] }>> = {
+type TrackerParams = {
+  start_date?: string;
+  end_date?: string;
+  source?: string;
+};
+
+const trackerAPIs: Record<string, (params: TrackerParams, patientEmail?: string) => Promise<{ observations: TrackerObservation[] }>> = {
   vitals: getVitals,
   medication: getMedications,
   exercise: getExercise,
@@ -89,6 +98,47 @@ function getTrend(current: number, previous: number): 'up' | 'down' | 'stable' {
   return diff > 0 ? 'up' : 'down';
 }
 
+function getObservationValue(observation?: TrackerObservation) {
+  return observation?.value_string || observation?.display || '-';
+}
+
+function SummaryTile({
+  icon: TileIcon,
+  label,
+  value,
+  detail,
+  valueClass = 'text-gray-900',
+  iconClass = 'text-gray-500',
+  bgClass = 'bg-gray-100',
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string | number;
+  detail: string;
+  valueClass?: string;
+  iconClass?: string;
+  bgClass?: string;
+}) {
+  return (
+    <div className="min-h-[132px] rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+      <div className="flex h-full flex-col justify-between gap-4">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{label}</p>
+          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${bgClass}`}>
+            <TileIcon className={`h-4 w-4 ${iconClass}`} />
+          </div>
+        </div>
+        <div className="min-w-0">
+          <p className={`break-words text-xl font-bold leading-tight ${valueClass}`}>
+            {value}
+          </p>
+          <p className="mt-1 truncate text-sm text-gray-500">{detail}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const item = {
   hidden: { opacity: 0, x: -20 },
   show: { opacity: 1, x: 0 }
@@ -99,7 +149,61 @@ export function TrackerDetailPage() {
   const config = trackerConfig[trackerId || 'vitals'];
   const [observations, setObservations] = useState<TrackerObservation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedFilter, setSelectedFilter] = useState<'today' | 'week' | 'month' | 'custom' | 'all'>('all');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const Icon = config?.icon || Heart;
+  const latestValue = getObservationValue(observations[0]);
+  const previousValue = getObservationValue(observations[1]);
+  const hasPreviousValue = previousValue !== '-';
+
+  const trendSummary = (() => {
+    if (observations.length < 2) {
+      return {
+        value: 'Not enough data',
+        detail: 'Add another entry',
+        icon: BarChart3,
+        valueClass: 'text-gray-700',
+        iconClass: config?.iconColor || 'text-gray-500',
+        bgClass: config?.bgColor || 'bg-gray-100',
+      };
+    }
+
+    const current = parseFloat(latestValue) || 0;
+    const previous = parseFloat(previousValue) || 0;
+    const trend = getTrend(current, previous);
+
+    if (trend === 'up') {
+      return {
+        value: 'Trending up',
+        detail: 'Compared with previous',
+        icon: TrendingUp,
+        valueClass: 'text-green-700',
+        iconClass: 'text-green-600',
+        bgClass: 'bg-green-100',
+      };
+    }
+
+    if (trend === 'down') {
+      return {
+        value: 'Trending down',
+        detail: 'Compared with previous',
+        icon: TrendingDown,
+        valueClass: 'text-red-700',
+        iconClass: 'text-red-600',
+        bgClass: 'bg-red-100',
+      };
+    }
+
+    return {
+      value: 'Stable',
+      detail: 'Compared with previous',
+      icon: BarChart3,
+      valueClass: 'text-gray-800',
+      iconClass: 'text-gray-600',
+      bgClass: 'bg-gray-100',
+    };
+  })();
 
   useEffect(() => {
     const loadData = async () => {
@@ -109,7 +213,39 @@ export function TrackerDetailPage() {
         const apiFunction = trackerAPIs[trackerId];
         if (!apiFunction) return;
         
-        const response = await apiFunction();
+        const params: TrackerParams = {};
+        const now = new Date();
+
+        switch (selectedFilter) {
+          case 'today':
+            params.start_date = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString().split('T')[0];
+            break;
+          case 'week': {
+            const weekAgo = new Date(now);
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            params.start_date = weekAgo.toISOString().split('T')[0];
+            break;
+          }
+          case 'month': {
+            const monthAgo = new Date(now);
+            monthAgo.setMonth(monthAgo.getMonth() - 1);
+            params.start_date = monthAgo.toISOString().split('T')[0];
+            break;
+          }
+          case 'custom':
+            if (customStartDate) {
+              params.start_date = customStartDate;
+            }
+            break;
+          default:
+            break;
+        }
+
+        if (selectedFilter === 'custom' && customEndDate) {
+          params.end_date = customEndDate;
+        }
+        
+        const response = await apiFunction(params);
         setObservations(response.observations);
       } catch (error) {
         console.error(`Failed to load ${trackerId} data:`, error);
@@ -119,7 +255,7 @@ export function TrackerDetailPage() {
     };
 
     loadData();
-  }, [trackerId]);
+  }, [trackerId, selectedFilter, customStartDate, customEndDate]);
 
   if (!config) {
     return (
@@ -169,53 +305,118 @@ export function TrackerDetailPage() {
       {/* Date Filter */}
       <div className="bg-white border-b border-gray-100 px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-2 overflow-x-auto hide-scrollbar">
-          <button className="px-4 py-2 rounded-full bg-[#6F42C1] text-white text-sm font-medium whitespace-nowrap">
+          <button 
+            onClick={() => setSelectedFilter('all')}
+            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+              selectedFilter === 'all' 
+                ? 'bg-[#6F42C1] text-white' 
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            All
+          </button>
+          <button 
+            onClick={() => setSelectedFilter('today')}
+            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+              selectedFilter === 'today' 
+                ? 'bg-[#6F42C1] text-white' 
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
             Today
           </button>
-          <button className="px-4 py-2 rounded-full bg-gray-100 text-gray-600 text-sm font-medium whitespace-nowrap hover:bg-gray-200 transition-colors">
+          <button 
+            onClick={() => setSelectedFilter('week')}
+            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+              selectedFilter === 'week' 
+                ? 'bg-[#6F42C1] text-white' 
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
             This Week
           </button>
-          <button className="px-4 py-2 rounded-full bg-gray-100 text-gray-600 text-sm font-medium whitespace-nowrap hover:bg-gray-200 transition-colors">
+          <button 
+            onClick={() => setSelectedFilter('month')}
+            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+              selectedFilter === 'month' 
+                ? 'bg-[#6F42C1] text-white' 
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
             This Month
           </button>
-          <button className="px-4 py-2 rounded-full bg-gray-100 text-gray-600 text-sm font-medium whitespace-nowrap hover:bg-gray-200 transition-colors flex items-center gap-1">
-            <Calendar className="w-4 h-4" />
+          <button 
+            onClick={() => setSelectedFilter('custom')}
+            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+              selectedFilter === 'custom' 
+                ? 'bg-[#6F42C1] text-white' 
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
             Custom
           </button>
         </div>
+        {selectedFilter === 'custom' && (
+          <div className="max-w-2xl mx-auto mt-3 flex items-center gap-3">
+            <div className="flex-1">
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+              />
+            </div>
+            <span className="text-gray-400">to</span>
+            <div className="flex-1">
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       <main className="max-w-2xl mx-auto px-4 py-6">
         {/* Summary Cards */}
         {observations.length > 0 && (
-          <motion.div variants={item} className="grid grid-cols-2 md:grid-cols-4 gap-4 -mt-12">
-            <div className="bg-white rounded-2xl shadow-lg p-5 border border-gray-100">
-              <p className="text-3xl font-bold text-gray-900">{observations.length}</p>
-              <p className="text-sm text-gray-500">Total Records</p>
-            </div>
-            <div className="bg-white rounded-2xl shadow-lg p-5 border border-gray-100">
-              <p className="text-3xl font-bold text-gray-900">
-                {observations.length > 0 ? observations[0].value_string : '-'}
-              </p>
-              <p className="text-sm text-gray-500">Latest</p>
-            </div>
-            <div className="bg-white rounded-2xl shadow-lg p-5 border border-gray-100">
-              <p className="text-3xl font-bold text-gray-900">
-                {observations.length > 1 ? observations[1].value_string : '-'}
-              </p>
-              <p className="text-sm text-gray-500">Previous</p>
-            </div>
-            <div className="bg-white rounded-2xl shadow-lg p-5 border border-gray-100">
-              {(() => {
-                if (observations.length < 2) return <p className="text-3xl font-bold text-gray-900">-</p>;
-                const current = parseFloat(observations[0].value_string) || 0;
-                const previous = parseFloat(observations[1].value_string) || 0;
-                const trend = getTrend(current, previous);
-                if (trend === 'up') return <><p className="text-3xl font-bold text-green-600">↑</p><p className="text-sm text-gray-500">Trend</p></>;
-                if (trend === 'down') return <><p className="text-3xl font-bold text-red-600">↓</p><p className="text-sm text-gray-500">Trend</p></>;
-                return <><p className="text-3xl font-bold text-gray-600">-</p><p className="text-sm text-gray-500">Trend</p></>;
-              })()}
-            </div>
+          <motion.div variants={item} className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
+            <SummaryTile
+              icon={BarChart3}
+              label="Total Records"
+              value={observations.length}
+              detail="Logged entries"
+              iconClass={config.iconColor}
+              bgClass={config.bgColor}
+            />
+            <SummaryTile
+              icon={Clock3}
+              label="Latest"
+              value={latestValue}
+              detail="Most recent entry"
+              iconClass={config.iconColor}
+              bgClass={config.bgColor}
+            />
+            <SummaryTile
+              icon={Clock3}
+              label="Previous"
+              value={hasPreviousValue ? previousValue : 'No previous entry'}
+              detail={hasPreviousValue ? 'Before latest' : 'Needs another record'}
+              valueClass={hasPreviousValue ? 'text-gray-900' : 'text-gray-500'}
+              iconClass={config.iconColor}
+              bgClass={config.bgColor}
+            />
+            <SummaryTile
+              icon={trendSummary.icon}
+              label="Trend"
+              value={trendSummary.value}
+              detail={trendSummary.detail}
+              valueClass={trendSummary.valueClass}
+              iconClass={trendSummary.iconClass}
+              bgClass={trendSummary.bgClass}
+            />
           </motion.div>
         )}
 

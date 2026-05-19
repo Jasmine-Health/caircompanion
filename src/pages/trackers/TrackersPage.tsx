@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 import { 
   Heart, 
   Pill, 
@@ -11,6 +12,15 @@ import {
   Activity
 } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui';
+import { 
+  getVitals,
+  getMedications,
+  getExercise,
+  getDiet,
+  getSleep,
+  getMood,
+  type TrackerObservation
+} from '../../services/healthDataService';
 
 const trackers = [
   {
@@ -83,6 +93,46 @@ const item = {
 };
 
 export function TrackersPage() {
+  const [trackerData, setTrackerData] = useState<Record<string, TrackerObservation[]>>({});
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadAllTrackers = async () => {
+      try {
+        const [vitals, medications, exercise, diet, sleep, mood] = await Promise.all([
+          getVitals({}, undefined).then(r => r.observations),
+          getMedications({}, undefined).then(r => r.observations),
+          getExercise({}, undefined).then(r => r.observations),
+          getDiet({}, undefined).then(r => r.observations),
+          getSleep({}, undefined).then(r => r.observations),
+          getMood({}, undefined).then(r => r.observations),
+        ]);
+        setTrackerData({
+          vitals,
+          medication: medications,
+          exercise,
+          diet,
+          sleep,
+          mood,
+        });
+      } catch (error) {
+        console.error('Failed to load tracker data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAllTrackers();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-[#6F42C1] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header - hidden on mobile, shown on desktop */}
@@ -103,10 +153,11 @@ export function TrackersPage() {
           variants={container}
           initial="hidden"
           animate="show"
-          className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          className="grid grid-cols-1 gap-4"
         >
           {trackers.map((tracker) => {
             const Icon = tracker.icon;
+            const data = trackerData[tracker.id] || [];
             return (
               <motion.div key={tracker.id} variants={item}>
                 <Link to={`/trackers/${tracker.id}`}>
@@ -121,6 +172,10 @@ export function TrackersPage() {
                             {tracker.name}
                           </h3>
                           <p className="text-sm text-gray-500">{tracker.description}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-gray-900">{data.length}</p>
+                          <p className="text-xs text-gray-500">records</p>
                         </div>
                         <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[#6F42C1] group-hover:translate-x-1 transition-all" />
                       </div>
