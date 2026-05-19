@@ -1,5 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 import { 
   ArrowLeft, 
   Heart, 
@@ -8,22 +9,19 @@ import {
   Apple, 
   Moon, 
   Smile,
-  Calendar,
-  TrendingUp,
-  TrendingDown,
-  Minus
+  Calendar
 } from 'lucide-react';
-import { Card, CardContent, Badge } from '../../components/ui';
+import { Card, CardContent } from '../../components/ui';
 import { 
-  mockVitalsHistory, 
-  mockMedicationHistory, 
-  mockExerciseHistory, 
-  mockSleepHistory, 
-  mockMoodHistory, 
-  mockDietHistory 
-} from '../../data/mockData';
+  getVitals,
+  getMedications,
+  getExercise,
+  getDiet,
+  getSleep,
+  getMood,
+  type TrackerObservation
+} from '../../services/healthDataService';
 import { formatDate, formatTime } from '../../lib/utils';
-import type { Observation } from '../../types';
 
 const trackerConfig: Record<string, {
   name: string;
@@ -76,13 +74,13 @@ const trackerConfig: Record<string, {
   },
 };
 
-const trackerData: Record<string, Observation[]> = {
-  vitals: mockVitalsHistory,
-  medication: mockMedicationHistory,
-  exercise: mockExerciseHistory,
-  diet: mockDietHistory,
-  sleep: mockSleepHistory,
-  mood: mockMoodHistory,
+const trackerAPIs: Record<string, (params?: any, patientEmail?: string) => Promise<{ observations: TrackerObservation[] }>> = {
+  vitals: getVitals,
+  medication: getMedications,
+  exercise: getExercise,
+  diet: getDiet,
+  sleep: getSleep,
+  mood: getMood,
 };
 
 function getTrend(current: number, previous: number): 'up' | 'down' | 'stable' {
@@ -90,14 +88,6 @@ function getTrend(current: number, previous: number): 'up' | 'down' | 'stable' {
   if (Math.abs(diff) < 0.5) return 'stable';
   return diff > 0 ? 'up' : 'down';
 }
-
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.05 }
-  }
-};
 
 const item = {
   hidden: { opacity: 0, x: -20 },
@@ -107,8 +97,29 @@ const item = {
 export function TrackerDetailPage() {
   const { trackerId } = useParams<{ trackerId: string }>();
   const config = trackerConfig[trackerId || 'vitals'];
-  const data = trackerData[trackerId || 'vitals'] || [];
+  const [observations, setObservations] = useState<TrackerObservation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const Icon = config?.icon || Heart;
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (!trackerId) return;
+      
+      try {
+        const apiFunction = trackerAPIs[trackerId];
+        if (!apiFunction) return;
+        
+        const response = await apiFunction();
+        setObservations(response.observations);
+      } catch (error) {
+        console.error(`Failed to load ${trackerId} data:`, error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, [trackerId]);
 
   if (!config) {
     return (
@@ -119,6 +130,14 @@ export function TrackerDetailPage() {
             Go back to trackers
           </Link>
         </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-[#6F42C1] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -168,95 +187,74 @@ export function TrackerDetailPage() {
 
       <main className="max-w-2xl mx-auto px-4 py-6">
         {/* Summary Cards */}
-        {data.length > 0 && (
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <Card>
-              <CardContent>
-                <p className="text-sm text-gray-500">Latest Reading</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">
-                  {data[0].value_string}
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {formatDate(data[0].effective_date)}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent>
-                <p className="text-sm text-gray-500">Total Records</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">
-                  {data.length}
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  This period
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Data List */}
-        <h2 className="font-semibold text-gray-900 mb-3">History</h2>
-        {data.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <div className={`w-16 h-16 rounded-full ${config.bgColor} flex items-center justify-center mx-auto mb-4`}>
-                <Icon className={`w-8 h-8 ${config.iconColor}`} />
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-1">No data yet</h3>
-              <p className="text-sm text-gray-500">
-                Start tracking your {config.name.toLowerCase()} to see data here
+        {observations.length > 0 && (
+          <motion.div variants={item} className="grid grid-cols-2 md:grid-cols-4 gap-4 -mt-12">
+            <div className="bg-white rounded-2xl shadow-lg p-5 border border-gray-100">
+              <p className="text-3xl font-bold text-gray-900">{observations.length}</p>
+              <p className="text-sm text-gray-500">Total Records</p>
+            </div>
+            <div className="bg-white rounded-2xl shadow-lg p-5 border border-gray-100">
+              <p className="text-3xl font-bold text-gray-900">
+                {observations.length > 0 ? observations[0].value_string : '-'}
               </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <motion.div
-            variants={container}
-            initial="hidden"
-            animate="show"
-            className="space-y-3"
-          >
-            {data.map((observation, index) => {
-              const trend = index < data.length - 1 
-                ? getTrend(observation.value, data[index + 1].value)
-                : 'stable';
-
-              return (
-                <motion.div key={observation.id} variants={item}>
-                  <Card>
-                    <CardContent className="flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-xl ${config.bgColor} flex items-center justify-center`}>
-                        <Icon className={`w-6 h-6 ${config.iconColor}`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-gray-900">{observation.display}</p>
-                          {trend === 'up' && <TrendingUp className="w-4 h-4 text-green-500" />}
-                          {trend === 'down' && <TrendingDown className="w-4 h-4 text-red-500" />}
-                          {trend === 'stable' && <Minus className="w-4 h-4 text-gray-400" />}
-                        </div>
-                        <p className="text-sm text-gray-500">
-                          {formatDate(observation.effective_date)} at {formatTime(observation.effective_date)}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-gray-900">
-                          {observation.value_string}
-                        </p>
-                        {observation.unit && (
-                          <p className="text-xs text-gray-500">{observation.unit}</p>
-                        )}
-                      </div>
-                      <Badge variant={observation.source === 'device' ? 'info' : 'default'}>
-                        {observation.source}
-                      </Badge>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              );
-            })}
+              <p className="text-sm text-gray-500">Latest</p>
+            </div>
+            <div className="bg-white rounded-2xl shadow-lg p-5 border border-gray-100">
+              <p className="text-3xl font-bold text-gray-900">
+                {observations.length > 1 ? observations[1].value_string : '-'}
+              </p>
+              <p className="text-sm text-gray-500">Previous</p>
+            </div>
+            <div className="bg-white rounded-2xl shadow-lg p-5 border border-gray-100">
+              {(() => {
+                if (observations.length < 2) return <p className="text-3xl font-bold text-gray-900">-</p>;
+                const current = parseFloat(observations[0].value_string) || 0;
+                const previous = parseFloat(observations[1].value_string) || 0;
+                const trend = getTrend(current, previous);
+                if (trend === 'up') return <><p className="text-3xl font-bold text-green-600">↑</p><p className="text-sm text-gray-500">Trend</p></>;
+                if (trend === 'down') return <><p className="text-3xl font-bold text-red-600">↓</p><p className="text-sm text-gray-500">Trend</p></>;
+                return <><p className="text-3xl font-bold text-gray-600">-</p><p className="text-sm text-gray-500">Trend</p></>;
+              })()}
+            </div>
           </motion.div>
         )}
+
+        {/* History */}
+        <motion.div variants={item}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-gray-900 text-lg">History</h2>
+          </div>
+          <Card>
+            <CardContent className="divide-y divide-gray-100">
+              {observations.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No data available</p>
+                </div>
+              ) : (
+                observations.map((obs, index) => (
+                  <div
+                    key={obs.id}
+                    className={`flex items-center justify-between ${index > 0 ? 'pt-4' : ''} ${index < observations.length - 1 ? 'pb-4' : ''}`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-xl ${config.bgColor} flex items-center justify-center`}>
+                        <Icon className={`w-5 h-5 ${config.iconColor}`} />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{obs.display}</p>
+                        <p className="text-sm text-gray-500">{formatDate(new Date(obs.effective_date))} at {formatTime(new Date(obs.effective_date))}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-gray-900">{obs.value_string}</p>
+                      <p className="text-sm text-gray-500">{obs.unit}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
       </main>
     </div>
   );

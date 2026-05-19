@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { User } from '../types';
-import { mockUser } from '../data/mockData';
+import { login as loginAPI, getCurrentUser } from '../services/authService';
 
 interface AuthContextType {
   user: User | null;
@@ -17,25 +17,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      getCurrentUser()
+        .then(setUser)
+        .catch(() => {
+          localStorage.removeItem('access_token');
+        })
+        .finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
-  const login = async (_email: string, _password: string) => {
-    // Mock login - in Phase 2, this will call the actual API
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setUser(mockUser);
-    localStorage.setItem('user', JSON.stringify(mockUser));
-    localStorage.setItem('token', 'mock-jwt-token');
+  const login = async (email: string, password: string) => {
+    const response = await loginAPI({ email, password });
+    setUser(response.user);
+    localStorage.setItem('access_token', response.access_token);
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
+    localStorage.removeItem('access_token');
   };
 
   return (

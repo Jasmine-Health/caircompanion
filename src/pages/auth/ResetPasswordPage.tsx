@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Lock, Eye, EyeOff, ArrowLeft, CheckCircle } from 'lucide-react';
 import { Button, Input } from '../../components/ui';
+import { resetPassword } from '../../services/authService';
 
 export function ResetPasswordPage() {
   const [password, setPassword] = useState('');
@@ -21,6 +22,11 @@ export function ResetPasswordPage() {
     e.preventDefault();
     setError('');
 
+    if (!token) {
+      setError('Invalid reset token');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -33,11 +39,14 @@ export function ResetPasswordPage() {
 
     setIsLoading(true);
 
-    // Mock API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setIsLoading(false);
-    setIsSubmitted(true);
+    try {
+      await resetPassword({ token, new_password: password });
+      setIsSubmitted(true);
+    } catch (err) {
+      setError('Failed to reset password. The link may have expired.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!token) {

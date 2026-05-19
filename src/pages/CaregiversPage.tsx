@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   UserPlus, 
@@ -11,7 +11,7 @@ import {
   Send
 } from 'lucide-react';
 import { Card, CardContent, Button, Input, Avatar, Badge } from '../components/ui';
-import { mockCaregivers, mockPendingRequests } from '../data/mockData';
+import { getCairgivers, getPendingRequests, approveRequest, sendPatientRequest, type Cairgiver, type PendingRequest } from '../services/cairgiverService';
 
 const container = {
   hidden: { opacity: 0 },
@@ -27,37 +27,81 @@ const item = {
 };
 
 export function CaregiversPage() {
-  const [caregivers] = useState(mockCaregivers);
-  const [pendingRequests, setPendingRequests] = useState(mockPendingRequests);
+  const [caregivers, setCaregivers] = useState<Cairgiver[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([]);
   const [email, setEmail] = useState('');
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [caregiversData, pendingData] = await Promise.all([
+          getCairgivers(),
+          getPendingRequests(),
+        ]);
+        setCaregivers(caregiversData);
+        setPendingRequests(pendingData);
+      } catch (error) {
+        console.error('Failed to load caregivers data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Mock API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setIsSubmitting(false);
-    setShowSuccess(true);
-    setEmail('');
-    
-    setTimeout(() => {
-      setShowSuccess(false);
-      setShowInviteForm(false);
-    }, 2000);
+    try {
+      await sendPatientRequest(email);
+      setShowSuccess(true);
+      setEmail('');
+      
+      setTimeout(() => {
+        setShowSuccess(false);
+        setShowInviteForm(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to send invitation:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleAccept = (id: string) => {
-    setPendingRequests(prev => prev.filter(r => r.relationship_id !== id));
+  const handleAccept = async (relationshipId: string) => {
+    try {
+      await approveRequest(relationshipId, 'approved');
+      setPendingRequests(prev => prev.filter(r => r.relationship_id !== relationshipId));
+      // Reload caregivers after approval
+      const caregiversData = await getCairgivers();
+      setCaregivers(caregiversData);
+    } catch (error) {
+      console.error('Failed to approve request:', error);
+    }
   };
 
-  const handleReject = (id: string) => {
-    setPendingRequests(prev => prev.filter(r => r.relationship_id !== id));
+  const handleReject = async (relationshipId: string) => {
+    try {
+      await approveRequest(relationshipId, 'rejected');
+      setPendingRequests(prev => prev.filter(r => r.relationship_id !== relationshipId));
+    } catch (error) {
+      console.error('Failed to reject request:', error);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-[#6F42C1] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50">

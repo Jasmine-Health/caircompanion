@@ -18,6 +18,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useOrganization } from '../contexts/OrganizationContext';
 import { mockVoiceModels } from '../data/mockData';
+import { changePassword } from '../services/authService';
 
 const container = {
   hidden: { opacity: 0 },
@@ -66,14 +67,17 @@ export function SettingsPage() {
 
     setIsChangingPassword(true);
     
-    // Mock API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setIsChangingPassword(false);
-    setShowPasswordModal(false);
-    setOldPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    try {
+      await changePassword({ old_password: oldPassword, new_password: newPassword });
+      setShowPasswordModal(false);
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setPasswordError('Failed to change password. Please check your current password and try again.');
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   const handlePlayVoice = (modelId: string) => {

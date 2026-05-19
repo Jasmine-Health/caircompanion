@@ -2,15 +2,17 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, User, MessageSquare } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { mockChatHistory } from '../data/mockData';
+import { API_CONFIG } from '../config/api';
 import type { ChatMessage } from '../types';
 
 export function ChatPage() {
-  useAuth();
-  const [messages, setMessages] = useState<ChatMessage[]>(mockChatHistory);
+  const { user } = useAuth();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const wsRef = useRef<WebSocket | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -20,8 +22,67 @@ export function ChatPage() {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    const wsUrl = `${API_CONFIG.BASE_URL.replace('http', 'ws')}/ws/chat?token=${token}`;
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      setIsConnected(true);
+      console.log('WebSocket connected');
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      
+      if (data.type === 'chunk') {
+        // Streaming response
+        setMessages(prev => {
+          const lastMessage = prev[prev.length - 1];
+          if (lastMessage?.role === 'assistant') {
+            return [
+              ...prev.slice(0, -1),
+              { ...lastMessage, content: lastMessage.content + data.content }
+            ];
+          }
+          return prev;
+        });
+      } else if (data.type === 'done') {
+        // Complete response
+        setIsTyping(false);
+        const assistantMessage: ChatMessage = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: data.complete_response,
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+      } else if (data.type === 'error') {
+        console.error('WebSocket error:', data.content);
+        setIsTyping(false);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      setIsConnected(false);
+    };
+
+    ws.onclose = () => {
+      setIsConnected(false);
+      console.log('WebSocket disconnected');
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, [user]);
+
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -31,28 +92,11 @@ export function ChatPage() {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const messageToSend = input.trim();
     setInput('');
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const responses = [
-        "I understand. Let me check your health records for that information.",
-        "That's a great question! Based on your care plan, I recommend...",
-        "I've noted that down. Is there anything else you'd like to know?",
-        "Your vitals look good today! Keep up the great work with your recovery.",
-      ];
-      
-      const assistantMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: responses[Math.floor(Math.random() * responses.length)],
-        timestamp: new Date(),
-      };
-
-      setMessages(prev => [...prev, assistantMessage]);
-      setIsTyping(false);
-    }, 1500);
+    wsRef.current.send(JSON.stringify({ message: messageToSend }));
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -77,8 +121,8 @@ export function ChatPage() {
             </div>
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
-            <span className="w-2 h-2 rounded-full bg-green-500" />
-            Online
+            <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+            {isConnected ? 'Online' : 'Offline'}
           </div>
         </div>
       </header>

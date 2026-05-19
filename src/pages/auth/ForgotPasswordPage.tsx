@@ -3,21 +3,27 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import { Button, Input } from '../../components/ui';
+import { forgotPassword } from '../../services/authService';
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     setIsLoading(true);
 
-    // Mock API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setIsLoading(false);
-    setIsSubmitted(true);
+    try {
+      await forgotPassword({ email, role: 'patient' });
+      setIsSubmitted(true);
+    } catch (err) {
+      setError('Failed to send reset email. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -61,6 +67,11 @@ export function ForgotPasswordPage() {
           >
             {!isSubmitted ? (
               <form onSubmit={handleSubmit} className="space-y-5">
+                {error && (
+                  <div className="p-3 rounded-xl bg-red-50 text-red-600 text-sm">
+                    {error}
+                  </div>
+                )}
                 <Input
                   label="Email"
                   type="email"
