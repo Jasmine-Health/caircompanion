@@ -24,17 +24,17 @@ export function Sidebar() {
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <img src="/logo.png" alt="CairCompanion" className="w-10 h-10" />
-          {selectedOrganization && (
-            <img 
-              src={selectedOrganization.logo} 
-              alt={selectedOrganization.name} 
-              className="w-9 h-9 rounded-lg object-cover -ml-2"
-            />
-          )}
           <div>
             <h1 className="font-bold text-gray-900">CairCompanion</h1>
             <p className="text-xs text-gray-500">Health Assistant</p>
           </div>
+          {selectedOrganization && (
+            <img 
+              src={selectedOrganization.logo} 
+              alt={selectedOrganization.name} 
+              className="w-9 h-9 rounded-lg object-contain"
+            />
+          )}
         </div>
       </div>
 

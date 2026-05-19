@@ -38,17 +38,17 @@ export function MobileHeader() {
       <div className="flex items-center justify-between px-4 h-14">
         <div className="flex items-center gap-3">
           <img src="/logo.png" alt="CairCompanion" className="w-9 h-9" />
-          {selectedOrganization && (
-            <img 
-              src={selectedOrganization.logo} 
-              alt={selectedOrganization.name} 
-              className="w-8 h-8 rounded-lg object-cover -ml-1"
-            />
-          )}
           <div className="flex flex-col">
             <span className="font-semibold text-gray-900 text-sm leading-tight">CairCompanion</span>
             <span className="text-xs text-gray-500 leading-tight">{pageTitle}</span>
           </div>
+          {selectedOrganization && (
+            <img 
+              src={selectedOrganization.logo} 
+              alt={selectedOrganization.name} 
+              className="w-8 h-8 rounded-lg object-contain"
+            />
+          )}
         </div>
         <div className="flex items-center gap-2 bg-gray-100 rounded-full pl-3 pr-1 py-1">
           <span className="text-sm font-medium text-gray-700">{user?.first_name || 'User'}</span>
