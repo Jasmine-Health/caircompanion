@@ -27,25 +27,25 @@ export function BottomNav() {
             <NavLink
               key={item.path}
               to={item.path}
-              className="flex flex-col items-center justify-center"
+              className="flex flex-col items-center justify-center relative"
             >
+              {isActive && (
+                <motion.div
+                  layoutId="activeIndicator"
+                  className="absolute top-0 w-8 h-1 bg-[#6F42C1] rounded-full"
+                  initial={false}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                />
+              )}
               <motion.div
                 className={cn(
-                  'flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg transition-colors',
+                  'flex flex-col items-center justify-center gap-1 py-2 px-1 transition-colors',
                   isActive ? 'text-[#6F42C1]' : 'text-gray-500'
                 )}
                 whileTap={{ scale: 0.9 }}
               >
-                {isActive && (
-                  <motion.div
-                    layoutId="activeTab"
-                    className="absolute inset-1 bg-[#6F42C1]/10 rounded-lg"
-                    initial={false}
-                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                  />
-                )}
-                <Icon className="w-5 h-5 relative z-10" strokeWidth={isActive ? 2.5 : 2} />
-                <span className="text-[9px] font-medium relative z-10 leading-none">{item.label}</span>
+                <Icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 2} />
+                <span className="text-[9px] font-medium leading-none">{item.label}</span>
               </motion.div>
             </NavLink>
           );

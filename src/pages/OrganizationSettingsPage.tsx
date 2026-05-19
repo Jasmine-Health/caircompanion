@@ -68,18 +68,36 @@ export function OrganizationSettingsPage() {
     <div className="bg-gray-50">
       {/* Header - hidden on mobile, shown on desktop */}
       <header className="hidden md:block bg-white border-b border-gray-200 px-4 py-6 md:px-6">
-        <div className="max-w-4xl mx-auto flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#6F42C1] to-[#8b5cf6] flex items-center justify-center">
-            <Building2 className="w-6 h-6 text-white" />
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#6F42C1] to-[#8b5cf6] flex items-center justify-center">
+              <Building2 className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Organization Settings</h1>
+              <p className="text-gray-500 mt-1">Manage your organization memberships</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Organization Settings</h1>
-            <p className="text-gray-500 mt-1">Manage your organization memberships</p>
-          </div>
+          {unenrolledOrganizations.length > 0 && (
+            <Button onClick={() => setShowEnrollModal(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Enroll
+            </Button>
+          )}
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6 pb-24 md:pb-6">
+        {/* Mobile enroll button */}
+        <div className="md:hidden mb-4">
+          {unenrolledOrganizations.length > 0 && (
+            <Button variant="outline" onClick={() => setShowEnrollModal(true)} className="w-full">
+              <Plus className="w-4 h-4 mr-2" />
+              Enroll in Organization
+            </Button>
+          )}
+        </div>
+        
         <motion.div
           variants={container}
           initial="hidden"
@@ -205,19 +223,7 @@ export function OrganizationSettingsPage() {
             </Card>
           </motion.div>
 
-          {/* Add Organization Button */}
-          {unenrolledOrganizations.length > 0 && (
-            <motion.div variants={item}>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => setShowEnrollModal(true)}
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Enroll in Organization
-              </Button>
-            </motion.div>
-          )}
+
         </motion.div>
       </main>
 

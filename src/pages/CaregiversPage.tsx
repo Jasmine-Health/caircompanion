@@ -124,84 +124,93 @@ export function CaregiversPage() {
         </div>
       </header>
 
+      {/* Invite Form Modal */}
+      <AnimatePresence>
+        {showInviteForm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4"
+            onClick={() => !isSubmitting && setShowInviteForm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl"
+            >
+              {showSuccess ? (
+                <div className="text-center py-4">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4"
+                  >
+                    <CheckCircle2 className="w-8 h-8 text-green-600" />
+                  </motion.div>
+                  <h3 className="text-lg font-semibold text-gray-900">Invitation Sent!</h3>
+                  <p className="text-gray-500 mt-1">They'll receive an email shortly</p>
+                </div>
+              ) : (
+                <>
+                  <h2 className="text-xl font-bold text-gray-900 mb-2">Invite Caregiver</h2>
+                  <p className="text-gray-500 mb-6">Send an invitation to add a caregiver to your care team</p>
+                  
+                  <form onSubmit={handleInvite}>
+                    <Input
+                      label="Email Address"
+                      type="email"
+                      placeholder="caregiver@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      icon={<Mail className="w-5 h-5" />}
+                      required
+                    />
+                    
+                    <div className="flex gap-3 mt-6">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="flex-1"
+                        onClick={() => setShowInviteForm(false)}
+                        disabled={isSubmitting}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        className="flex-1"
+                        isLoading={isSubmitting}
+                      >
+                        <Send className="w-4 h-4 mr-2" />
+                        Send Invite
+                      </Button>
+                    </div>
+                  </form>
+                </>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <main className="max-w-2xl mx-auto px-4 py-6">
+        {/* Mobile invite button */}
+        <div className="md:hidden mb-4">
+          <Button variant="outline" onClick={() => setShowInviteForm(true)} className="w-full">
+            <UserPlus className="w-4 h-4 mr-2" />
+            Invite Caregiver
+          </Button>
+        </div>
+        
         <motion.div
           variants={container}
           initial="hidden"
           animate="show"
           className="space-y-6"
         >
-          {/* Invite Form Modal */}
-          <AnimatePresence>
-            {showInviteForm && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4"
-                onClick={() => !isSubmitting && setShowInviteForm(false)}
-              >
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.9, opacity: 0 }}
-                  onClick={(e) => e.stopPropagation()}
-                  className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl"
-                >
-                  {showSuccess ? (
-                    <div className="text-center py-4">
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4"
-                      >
-                        <CheckCircle2 className="w-8 h-8 text-green-600" />
-                      </motion.div>
-                      <h3 className="text-lg font-semibold text-gray-900">Invitation Sent!</h3>
-                      <p className="text-gray-500 mt-1">They'll receive an email shortly</p>
-                    </div>
-                  ) : (
-                    <>
-                      <h2 className="text-xl font-bold text-gray-900 mb-2">Invite Caregiver</h2>
-                      <p className="text-gray-500 mb-6">Send an invitation to add a caregiver to your care team</p>
-                      
-                      <form onSubmit={handleInvite}>
-                        <Input
-                          label="Email Address"
-                          type="email"
-                          placeholder="caregiver@example.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          icon={<Mail className="w-5 h-5" />}
-                          required
-                        />
-                        
-                        <div className="flex gap-3 mt-6">
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            className="flex-1"
-                            onClick={() => setShowInviteForm(false)}
-                            disabled={isSubmitting}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            type="submit"
-                            className="flex-1"
-                            isLoading={isSubmitting}
-                          >
-                            <Send className="w-4 h-4 mr-2" />
-                            Send Invite
-                          </Button>
-                        </div>
-                      </form>
-                    </>
-                  )}
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           {/* Pending Requests */}
           {pendingRequests.length > 0 && (
