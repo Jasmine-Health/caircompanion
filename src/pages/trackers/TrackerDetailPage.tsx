@@ -304,7 +304,7 @@ export function TrackerDetailPage() {
 
       {/* Date Filter */}
       <div className="bg-white border-b border-gray-100 px-4 py-3">
-        <div className="max-w-2xl mx-auto flex items-center gap-2 overflow-x-auto hide-scrollbar">
+        <div className="max-w-4xl mx-auto flex items-center gap-2 overflow-x-auto hide-scrollbar">
           <button 
             onClick={() => setSelectedFilter('all')}
             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
@@ -357,7 +357,7 @@ export function TrackerDetailPage() {
           </button>
         </div>
         {selectedFilter === 'custom' && (
-          <div className="max-w-2xl mx-auto mt-3 flex items-center gap-3">
+          <div className="max-w-4xl mx-auto mt-3 flex items-center gap-3">
             <div className="flex-1">
               <input
                 type="date"
@@ -379,7 +379,7 @@ export function TrackerDetailPage() {
         )}
       </div>
 
-      <main className="max-w-2xl mx-auto px-4 py-6">
+      <main className="max-w-4xl mx-auto px-4 py-6">
         {/* Summary Cards */}
         {observations.length > 0 && (
           <motion.div variants={item} className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
