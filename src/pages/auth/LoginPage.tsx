@@ -53,6 +53,12 @@ export function LoginPage() {
             </motion.div>
             <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
             <p className="text-gray-500 mt-1">Sign in to CairCompanion</p>
+            <Link
+              to="/select-organization"
+              className="text-sm text-[#6F42C1] hover:text-[#5a32a3] font-medium mt-2 inline-block"
+            >
+              Change organization
+            </Link>
           </div>
 
           {/* Login Form */}

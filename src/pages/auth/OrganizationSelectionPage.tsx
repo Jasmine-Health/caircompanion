@@ -78,7 +78,7 @@ export function OrganizationSelectionPage() {
                   <img
                     src={org.logo}
                     alt={org.name}
-                    className="w-12 h-12 rounded-xl object-cover"
+                    className="w-12 h-12 rounded-xl object-contain"
                   />
                   <div className="flex-1 text-left">
                     <p className="font-semibold text-gray-900">{org.name}</p>
