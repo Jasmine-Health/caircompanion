@@ -1,6 +1,7 @@
 import { useLocation } from 'react-router-dom';
 import { User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useOrganization } from '../../contexts/OrganizationContext';
 
 const pageTitles: Record<string, string> = {
   '/voice': 'Voice',
@@ -9,11 +10,13 @@ const pageTitles: Record<string, string> = {
   '/trackers': 'Trackers',
   '/caregivers': 'Caregivers',
   '/settings': 'Settings',
+  '/organization-settings': 'Settings',
 };
 
 export function MobileHeader() {
   const location = useLocation();
   const { user } = useAuth();
+  const { selectedOrganization } = useOrganization();
   
   // Get page title, handle tracker sub-pages
   let pageTitle = pageTitles[location.pathname] || '';
@@ -35,6 +38,13 @@ export function MobileHeader() {
       <div className="flex items-center justify-between px-4 h-14">
         <div className="flex items-center gap-3">
           <img src="/logo.png" alt="CairCompanion" className="w-9 h-9" />
+          {selectedOrganization && (
+            <img 
+              src={selectedOrganization.logo} 
+              alt={selectedOrganization.name} 
+              className="w-8 h-8 rounded-lg object-cover -ml-1"
+            />
+          )}
           <div className="flex flex-col">
             <span className="font-semibold text-gray-900 text-sm leading-tight">CairCompanion</span>
             <span className="text-xs text-gray-500 leading-tight">{pageTitle}</span>

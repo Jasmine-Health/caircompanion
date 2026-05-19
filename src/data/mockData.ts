@@ -1,4 +1,4 @@
-import type { PatientSummary, Alert, Observation, Caregiver, CaregiverRequest, VoiceModel, ChatMessage } from '../types';
+import type { PatientSummary, Alert, Observation, Caregiver, CaregiverRequest, VoiceModel, ChatMessage, Organization, UserOrganization } from '../types';
 
 export const mockUser = {
   email: 'john.doe@example.com',
@@ -522,5 +522,45 @@ export const mockChatHistory: ChatMessage[] = [
     role: 'assistant',
     content: 'Your next medication is Metformin 500mg, scheduled for 6:00 PM with your evening meal. Would you like me to remind you when it\'s time?',
     timestamp: new Date('2024-01-15T10:02:00Z'),
+  },
+];
+
+export const mockOrganizations: Organization[] = [
+  {
+    id: 'org-1',
+    name: 'Metro General Hospital',
+    logo: 'https://ui-avatars.com/api/?name=Metro+General&background=6F42C1&color=fff&size=128',
+    description: 'Leading healthcare provider in the metropolitan area',
+  },
+  {
+    id: 'org-2',
+    name: 'Sunrise Medical Center',
+    logo: 'https://ui-avatars.com/api/?name=Sunrise+Medical&background=059669&color=fff&size=128',
+    description: 'Comprehensive medical care for the whole family',
+  },
+  {
+    id: 'org-3',
+    name: 'Valley Health Clinic',
+    logo: 'https://ui-avatars.com/api/?name=Valley+Health&background=DC2626&color=fff&size=128',
+    description: 'Community-focused healthcare services',
+  },
+  {
+    id: 'org-4',
+    name: 'Coastal Care Network',
+    logo: 'https://ui-avatars.com/api/?name=Coastal+Care&background=2563EB&color=fff&size=128',
+    description: 'Integrated healthcare network serving coastal communities',
+  },
+];
+
+export const mockUserOrganizations: UserOrganization[] = [
+  {
+    organization: mockOrganizations[0],
+    enrolledAt: '2024-01-01T00:00:00Z',
+    isActive: true,
+  },
+  {
+    organization: mockOrganizations[1],
+    enrolledAt: '2024-02-15T00:00:00Z',
+    isActive: false,
   },
 ];

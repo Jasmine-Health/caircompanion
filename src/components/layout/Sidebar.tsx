@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Mic, MessageSquare, LayoutDashboard, Activity, Users, Settings, LogOut } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
+import { useOrganization } from '../../contexts/OrganizationContext';
 
 const navItems = [
   { path: '/voice', icon: Mic, label: 'Voice' },
@@ -16,12 +17,20 @@ const navItems = [
 export function Sidebar() {
   const location = useLocation();
   const { user, logout } = useAuth();
+  const { selectedOrganization } = useOrganization();
 
   return (
     <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 h-screen fixed top-0 left-0 z-40">
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <img src="/logo.png" alt="CairCompanion" className="w-10 h-10" />
+          {selectedOrganization && (
+            <img 
+              src={selectedOrganization.logo} 
+              alt={selectedOrganization.name} 
+              className="w-9 h-9 rounded-lg object-cover -ml-2"
+            />
+          )}
           <div>
             <h1 className="font-bold text-gray-900">CairCompanion</h1>
             <p className="text-xs text-gray-500">Health Assistant</p>

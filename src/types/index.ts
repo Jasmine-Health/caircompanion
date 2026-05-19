@@ -135,3 +135,16 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
 }
+
+export interface Organization {
+  id: string;
+  name: string;
+  logo: string;
+  description?: string;
+}
+
+export interface UserOrganization {
+  organization: Organization;
+  enrolledAt: string;
+  isActive: boolean;
+}

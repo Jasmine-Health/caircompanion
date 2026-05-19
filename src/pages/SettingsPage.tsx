@@ -10,10 +10,13 @@ import {
   Eye,
   EyeOff,
   X,
-  Settings
+  Settings,
+  Building2
 } from 'lucide-react';
 import { Card, CardContent, Button, Input, Badge } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { useOrganization } from '../contexts/OrganizationContext';
 import { mockVoiceModels } from '../data/mockData';
 
 const container = {
@@ -31,6 +34,8 @@ const item = {
 
 export function SettingsPage() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const { selectedOrganization } = useOrganization();
   const [selectedVoice, setSelectedVoice] = useState('aura-2-thalia-en');
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showVoiceModal, setShowVoiceModal] = useState(false);
@@ -148,7 +153,7 @@ export function SettingsPage() {
 
                 <button
                   onClick={() => setShowVoiceModal(true)}
-                  className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors"
+                  className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors border-b border-gray-100"
                 >
                   <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
                     <Volume2 className="w-5 h-5 text-purple-600" />
@@ -157,6 +162,22 @@ export function SettingsPage() {
                     <p className="font-medium text-gray-900">Voice Model</p>
                     <p className="text-sm text-gray-500">
                       {mockVoiceModels.find(v => v.model === selectedVoice)?.name || 'Select a voice'}
+                    </p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                </button>
+
+                <button
+                  onClick={() => navigate('/organization-settings')}
+                  className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                    <Building2 className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-medium text-gray-900">Organizations</p>
+                    <p className="text-sm text-gray-500">
+                      {selectedOrganization?.name || 'Manage your organizations'}
                     </p>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-400" />
