@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Mic, Square, Download, Volume2, Loader2, WifiOff, AudioLines } from 'lucide-react';
 import { Button } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
@@ -151,32 +151,32 @@ export function VoicePage() {
 
         {/* Mic button centered */}
         <div className="flex-1 flex flex-col items-center justify-center">
-          {/* Animated Rings */}
+          {/* Animated Rings - always rendered, opacity controlled to prevent remount flicker */}
           <div className="relative">
-            <AnimatePresence>
-              {isInConversation && (
-                <>
-                  <motion.div
-                    initial={{ scale: 1, opacity: 0.5 }}
-                    animate={{ scale: 1.5, opacity: 0 }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                    className={`absolute inset-0 rounded-full ${getRingColour()}`}
-                  />
-                  <motion.div
-                    initial={{ scale: 1, opacity: 0.5 }}
-                    animate={{ scale: 1.8, opacity: 0 }}
-                    transition={{ duration: 1.5, repeat: Infinity, delay: 0.3 }}
-                    className={`absolute inset-0 rounded-full ${getRingColour()}`}
-                  />
-                  <motion.div
-                    initial={{ scale: 1, opacity: 0.5 }}
-                    animate={{ scale: 2.1, opacity: 0 }}
-                    transition={{ duration: 1.5, repeat: Infinity, delay: 0.6 }}
-                    className={`absolute inset-0 rounded-full ${getRingColour()}`}
-                  />
-                </>
-              )}
-            </AnimatePresence>
+            <motion.div
+              animate={{ 
+                scale: isInConversation ? [1, 1.5, 1] : 1, 
+                opacity: isInConversation ? [0.5, 0, 0.5] : 0 
+              }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
+              className={`absolute inset-0 rounded-full ${getRingColour()} pointer-events-none`}
+            />
+            <motion.div
+              animate={{ 
+                scale: isInConversation ? [1, 1.8, 1] : 1, 
+                opacity: isInConversation ? [0.4, 0, 0.4] : 0 
+              }}
+              transition={{ duration: 1.5, repeat: Infinity, delay: 0.3, ease: 'easeOut' }}
+              className={`absolute inset-0 rounded-full ${getRingColour()} pointer-events-none`}
+            />
+            <motion.div
+              animate={{ 
+                scale: isInConversation ? [1, 2.1, 1] : 1, 
+                opacity: isInConversation ? [0.3, 0, 0.3] : 0 
+              }}
+              transition={{ duration: 1.5, repeat: Infinity, delay: 0.6, ease: 'easeOut' }}
+              className={`absolute inset-0 rounded-full ${getRingColour()} pointer-events-none`}
+            />
 
             {/* Main Mic Button */}
             <motion.button
@@ -191,12 +191,11 @@ export function VoicePage() {
             </motion.button>
           </div>
 
-          {/* Status Text */}
+          {/* Status Text - no key prop to prevent remount flicker */}
           <motion.p
-            key={status}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`mt-6 text-lg font-medium ${hasError ? 'text-red-500' : 'text-gray-600'}`}
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 1 }}
+            className={`mt-6 text-lg font-medium transition-colors duration-300 ${hasError ? 'text-red-500' : 'text-gray-600'}`}
           >
             {getStatusText()}
           </motion.p>
