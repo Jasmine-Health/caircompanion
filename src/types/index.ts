@@ -3,7 +3,6 @@ export interface User {
   first_name: string;
   last_name: string;
   phone?: string;
-  database_name: string;
   is_active: boolean;
   agreed_to_sms: boolean;
   role: 'patient' | 'cairgiver';

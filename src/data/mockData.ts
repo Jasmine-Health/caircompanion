@@ -5,7 +5,6 @@ export const mockUser = {
   first_name: 'John',
   last_name: 'Doe',
   phone: '+1234567890',
-  database_name: 'john_doe_1234567_db',
   is_active: true,
   agreed_to_sms: false,
   role: 'patient' as const,
