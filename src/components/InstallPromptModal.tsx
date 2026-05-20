@@ -168,12 +168,12 @@ export function InstallPromptModal({ isOpen, onClose, platform }: InstallPromptM
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: 'spring', duration: 0.4 }}
-            className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl shadow-2xl p-6 md:p-8 flex flex-col border border-gray-100 dark:border-gray-800"
+            className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 md:p-8 flex flex-col border border-gray-100"
           >
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
@@ -184,11 +184,11 @@ export function InstallPromptModal({ isOpen, onClose, platform }: InstallPromptM
               <div className="inline-block p-4 bg-gradient-to-br from-[#6F42C1]/10 to-[#8b5cf6]/10 rounded-2xl mb-4">
                 <img src="/logo.png" alt="CairCompanion" className="w-14 h-14 object-contain mx-auto" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center justify-center gap-2">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center justify-center gap-2">
                 <Download className="w-5 h-5 text-[#6F42C1]" />
                 Install CairCompanion
               </h3>
-              <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+              <p className="text-gray-500 text-sm mt-1">
                 Access your health companion directly from your home screen
               </p>
             </div>
@@ -199,7 +199,7 @@ export function InstallPromptModal({ isOpen, onClose, platform }: InstallPromptM
             </div>
 
             {/* Action Button */}
-            <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
+            <div className="mt-6 pt-4 border-t border-gray-100">
               <button
                 onClick={onClose}
                 className="w-full py-3 bg-[#6F42C1] text-white font-semibold rounded-xl hover:bg-[#5a32a3] active:scale-[0.98] transition-all focus:outline-none focus:ring-2 focus:ring-[#6F42C1] focus:ring-offset-2"
