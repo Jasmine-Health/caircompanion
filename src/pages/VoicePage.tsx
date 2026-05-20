@@ -1,3 +1,4 @@
+import { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, Square, Download, Volume2, Loader2, WifiOff, AudioLines } from 'lucide-react';
 import { Button } from '../components/ui';
@@ -8,6 +9,7 @@ import { useVoiceChat } from '../hooks/useVoiceChat';
 
 export function VoicePage() {
   useAuth();
+  const transcriptRef = useRef<HTMLParagraphElement>(null);
   const { isInstallable, install, showInstructions, setShowInstructions, platform } = usePWAInstall();
   const {
     status,
@@ -17,6 +19,12 @@ export function VoicePage() {
     stopConversation,
     error,
   } = useVoiceChat();
+
+  useEffect(() => {
+    if (transcriptRef.current) {
+      transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
+    }
+  }, [transcript]);
 
   // Derived states
   const isConnecting = status === 'connecting' || status === 'disconnected';
@@ -231,7 +239,10 @@ export function VoicePage() {
                 )}
               </h3>
             </div>
-            <p className="text-gray-600 leading-relaxed min-h-[80px] md:min-h-[100px]">
+            <p
+              ref={transcriptRef}
+              className="text-gray-600 leading-relaxed h-[96px] md:h-[120px] overflow-y-auto pr-2 custom-scrollbar"
+            >
               {transcript || (isConnecting
                 ? 'Connecting to voice assistant...'
                 : isReady
