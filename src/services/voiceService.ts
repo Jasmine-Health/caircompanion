@@ -1,4 +1,14 @@
-import { API_ENDPOINTS } from '../config/api';
+import { API_ENDPOINTS, fetchAPI } from '../config/api';
+import type { VoiceModel } from '../types';
+
+export interface VoiceModelsResponse {
+  voice_models: VoiceModel[];
+}
+
+export async function getVoiceModels(): Promise<VoiceModel[]> {
+  const response = await fetchAPI<VoiceModelsResponse>(API_ENDPOINTS.VOICE_MODELS);
+  return response.voice_models;
+}
 
 export async function getVoiceSample(model: string): Promise<Blob> {
   const queryParams = new URLSearchParams();

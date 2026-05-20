@@ -54,6 +54,7 @@ export const API_ENDPOINTS = {
   
   // Voice
   VOICE_SAMPLE: '/voice/sample',
+  VOICE_MODELS: '/voice/models',
 };
 
 export class APIError extends Error {

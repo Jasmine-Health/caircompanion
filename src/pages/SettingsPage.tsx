@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Lock, 
@@ -17,9 +17,9 @@ import { Card, CardContent, Button, Input, Badge } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useOrganization } from '../contexts/OrganizationContext';
-import { mockVoiceModels } from '../data/mockData';
 import { changePassword } from '../services/authService';
-import { getVoiceSample } from '../services/voiceService';
+import { getVoiceSample, getVoiceModels } from '../services/voiceService';
+import type { VoiceModel } from '../types';
 
 const container = {
   hidden: { opacity: 0 },
@@ -40,10 +40,25 @@ export function SettingsPage() {
   const { selectedOrganization } = useOrganization();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [selectedVoice, setSelectedVoice] = useState('aura-2-thalia-en');
+  const [voiceModels, setVoiceModels] = useState<VoiceModel[]>([]);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [playingVoice, setPlayingVoice] = useState<string | null>(null);
   const [isLoadingVoice, setIsLoadingVoice] = useState<string | null>(null);
+
+  // Fetch voice models on component mount
+  useEffect(() => {
+    const loadVoiceModels = async () => {
+      try {
+        const models = await getVoiceModels();
+        setVoiceModels(models);
+      } catch (error) {
+        console.error('Failed to load voice models:', error);
+      }
+    };
+
+    loadVoiceModels();
+  }, []);
   
   // Password change state
   const [oldPassword, setOldPassword] = useState('');
@@ -206,7 +221,7 @@ export function SettingsPage() {
                   <div className="flex-1 text-left">
                     <p className="font-medium text-gray-900">Voice Model</p>
                     <p className="text-sm text-gray-500">
-                      {mockVoiceModels.find(v => v.model === selectedVoice)?.name || 'Select a voice'}
+                      {voiceModels.find(v => v.model === selectedVoice)?.name || 'Select a voice'}
                     </p>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -381,7 +396,7 @@ export function SettingsPage() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {mockVoiceModels.map((voice) => (
+                {voiceModels.map((voice) => (
                   <motion.div
                     key={voice.model}
                     whileTap={{ scale: 0.98 }}
