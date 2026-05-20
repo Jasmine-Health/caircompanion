@@ -107,6 +107,33 @@ export interface TrackersResponse {
   observations: TrackerObservation[];
 }
 
+export interface TrackerSummaryEntry {
+  display: string;
+  value: number | null;
+  value_string: string;
+  unit: string;
+  source: string;
+  effective_date: string;
+}
+
+export interface TrackerSummarySection {
+  count: number;
+  entries: TrackerSummaryEntry[];
+}
+
+export interface TrackersSummaryResponse {
+  patient_id: string;
+  date: string;
+  summary: {
+    vital: TrackerSummarySection;
+    medication_event: TrackerSummarySection;
+    exercise: TrackerSummarySection;
+    diet: TrackerSummarySection;
+    sleep: TrackerSummarySection;
+    mood: TrackerSummarySection;
+  };
+}
+
 export async function getDailySummary(date: string, patientEmail?: string): Promise<DailySummary> {
   const headers: Record<string, string> = {};
   if (patientEmail) {
@@ -257,6 +284,20 @@ export async function getMood(params: { start_date?: string; end_date?: string }
   }
   
   return fetchAPI<TrackersResponse>(`${API_ENDPOINTS.TRACKERS_V2_MOOD}?${queryParams.toString()}`, {
+    headers,
+  });
+}
+
+export async function getTrackersSummary(date?: string, patientEmail?: string): Promise<TrackersSummaryResponse> {
+  const queryParams = new URLSearchParams();
+  if (date) queryParams.append('date', date);
+  
+  const headers: Record<string, string> = {};
+  if (patientEmail) {
+    headers['X-Patient-Email'] = patientEmail;
+  }
+  
+  return fetchAPI<TrackersSummaryResponse>(`${API_ENDPOINTS.TRACKERS_V2_SUMMARY}?${queryParams.toString()}`, {
     headers,
   });
 }

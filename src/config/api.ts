@@ -38,6 +38,7 @@ export const API_ENDPOINTS = {
   TRACKERS_V2_DIET: '/trackers_v2/diet',
   TRACKERS_V2_SLEEP: '/trackers_v2/sleep',
   TRACKERS_V2_MOOD: '/trackers_v2/mood',
+  TRACKERS_V2_SUMMARY: '/trackers_v2/summary',
   
   // Cairgiver
   CAIRGIVER_REQUEST: '/cairgiver/request',

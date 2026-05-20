@@ -13,18 +13,14 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui';
 import { 
-  getVitals,
-  getMedications,
-  getExercise,
-  getDiet,
-  getSleep,
-  getMood,
-  type TrackerObservation
+  getTrackersSummary,
+  type TrackersSummaryResponse
 } from '../../services/healthDataService';
 
 const trackers = [
   {
     id: 'vitals',
+    summaryKey: 'vital' as const,
     name: 'Vitals',
     description: 'Blood pressure, heart rate, glucose',
     icon: Heart,
@@ -34,6 +30,7 @@ const trackers = [
   },
   {
     id: 'medication',
+    summaryKey: 'medication_event' as const,
     name: 'Medication',
     description: 'Track medication adherence',
     icon: Pill,
@@ -43,6 +40,7 @@ const trackers = [
   },
   {
     id: 'exercise',
+    summaryKey: 'exercise' as const,
     name: 'Exercise',
     description: 'Activity and workout logs',
     icon: Dumbbell,
@@ -52,6 +50,7 @@ const trackers = [
   },
   {
     id: 'diet',
+    summaryKey: 'diet' as const,
     name: 'Diet',
     description: 'Meals and nutrition tracking',
     icon: Apple,
@@ -61,6 +60,7 @@ const trackers = [
   },
   {
     id: 'sleep',
+    summaryKey: 'sleep' as const,
     name: 'Sleep',
     description: 'Sleep duration and quality',
     icon: Moon,
@@ -70,6 +70,7 @@ const trackers = [
   },
   {
     id: 'mood',
+    summaryKey: 'mood' as const,
     name: 'Mood',
     description: 'Emotional wellbeing tracking',
     icon: Smile,
@@ -93,28 +94,15 @@ const item = {
 };
 
 export function TrackersPage() {
-  const [trackerData, setTrackerData] = useState<Record<string, TrackerObservation[]>>({});
+  const [trackerData, setTrackerData] = useState<TrackersSummaryResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadAllTrackers = async () => {
       try {
-        const [vitals, medications, exercise, diet, sleep, mood] = await Promise.all([
-          getVitals({}, undefined).then(r => r.observations),
-          getMedications({}, undefined).then(r => r.observations),
-          getExercise({}, undefined).then(r => r.observations),
-          getDiet({}, undefined).then(r => r.observations),
-          getSleep({}, undefined).then(r => r.observations),
-          getMood({}, undefined).then(r => r.observations),
-        ]);
-        setTrackerData({
-          vitals,
-          medication: medications,
-          exercise,
-          diet,
-          sleep,
-          mood,
-        });
+        const today = new Date().toISOString().split('T')[0];
+        const summary = await getTrackersSummary(today);
+        setTrackerData(summary);
       } catch (error) {
         console.error('Failed to load tracker data:', error);
       } finally {
@@ -152,6 +140,10 @@ export function TrackersPage() {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Today's Summary</h2>
+          <p className="text-sm text-gray-500 mt-1">Tap on a section to view details and history</p>
+        </div>
         <motion.div
           variants={container}
           initial="hidden"
@@ -160,7 +152,7 @@ export function TrackersPage() {
         >
           {trackers.map((tracker) => {
             const Icon = tracker.icon;
-            const data = trackerData[tracker.id] || [];
+            const count = trackerData?.summary[tracker.summaryKey]?.count || 0;
             return (
               <motion.div key={tracker.id} variants={item}>
                 <Link to={`/trackers/${tracker.id}`}>
@@ -177,7 +169,7 @@ export function TrackersPage() {
                           <p className="text-sm text-gray-500">{tracker.description}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-lg font-bold text-gray-900">{data.length}</p>
+                          <p className="text-lg font-bold text-gray-900">{count}</p>
                           <p className="text-xs text-gray-500">records</p>
                         </div>
                         <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[#6F42C1] group-hover:translate-x-1 transition-all" />
