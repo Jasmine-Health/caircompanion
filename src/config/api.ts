@@ -51,6 +51,9 @@ export const API_ENDPOINTS = {
   CAIRGIVER_CAIRGIVER_DETAIL: (cairgiverEmail: string) => `/cairgiver/cairgivers/${cairgiverEmail}`,
   CAIRGIVER_PATIENT_LIST: '/cairgiver/patient-list',
   CAIRGIVER_PATIENT_REQUEST: '/cairgiver/patient/request',
+  
+  // Voice
+  VOICE_SAMPLE: '/voice/sample',
 };
 
 export class APIError extends Error {

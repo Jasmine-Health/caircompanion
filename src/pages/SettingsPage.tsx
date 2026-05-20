@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Lock, 
@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import { useOrganization } from '../contexts/OrganizationContext';
 import { mockVoiceModels } from '../data/mockData';
 import { changePassword } from '../services/authService';
+import { getVoiceSample } from '../services/voiceService';
 
 const container = {
   hidden: { opacity: 0 },
@@ -37,10 +38,12 @@ export function SettingsPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { selectedOrganization } = useOrganization();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [selectedVoice, setSelectedVoice] = useState('aura-2-thalia-en');
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [playingVoice, setPlayingVoice] = useState<string | null>(null);
+  const [isLoadingVoice, setIsLoadingVoice] = useState<string | null>(null);
   
   // Password change state
   const [oldPassword, setOldPassword] = useState('');
@@ -80,13 +83,48 @@ export function SettingsPage() {
     }
   };
 
-  const handlePlayVoice = (modelId: string) => {
+  const handlePlayVoice = async (modelId: string) => {
+    // Stop currently playing audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+
+    // If clicking the same voice that's playing, just stop it
     if (playingVoice === modelId) {
       setPlayingVoice(null);
-    } else {
-      setPlayingVoice(modelId);
-      // Simulate audio playback
-      setTimeout(() => setPlayingVoice(null), 3000);
+      return;
+    }
+
+    // Play new voice sample
+    setPlayingVoice(modelId);
+    setIsLoadingVoice(modelId);
+
+    try {
+      const audioBlob = await getVoiceSample(modelId);
+      const audioUrl = URL.createObjectURL(audioBlob);
+      
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+      
+      audio.onended = () => {
+        setPlayingVoice(null);
+        setIsLoadingVoice(null);
+        URL.revokeObjectURL(audioUrl);
+      };
+      
+      audio.onerror = () => {
+        setPlayingVoice(null);
+        setIsLoadingVoice(null);
+        URL.revokeObjectURL(audioUrl);
+      };
+      
+      await audio.play();
+      setIsLoadingVoice(null);
+    } catch (error) {
+      console.error('Failed to play voice sample:', error);
+      setPlayingVoice(null);
+      setIsLoadingVoice(null);
     }
   };
 
@@ -380,13 +418,16 @@ export function SettingsPage() {
                           e.stopPropagation();
                           handlePlayVoice(voice.model);
                         }}
+                        disabled={isLoadingVoice === voice.model}
                         className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
                           playingVoice === voice.model
                             ? 'bg-[#6F42C1] text-white'
                             : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
+                        } ${isLoadingVoice === voice.model ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
-                        {playingVoice === voice.model ? (
+                        {isLoadingVoice === voice.model ? (
+                          <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        ) : playingVoice === voice.model ? (
                           <motion.div
                             animate={{ scale: [1, 1.2, 1] }}
                             transition={{ duration: 0.5, repeat: Infinity }}
