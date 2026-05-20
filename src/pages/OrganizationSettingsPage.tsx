@@ -245,7 +245,7 @@ export function OrganizationSettingsPage() {
               exit={{ y: 100, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-hidden shadow-xl"
+              className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col shadow-xl overflow-hidden"
             >
               <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900">Available Organizations</h2>
@@ -258,7 +258,7 @@ export function OrganizationSettingsPage() {
                 </button>
               </div>
 
-              <div className="overflow-y-auto p-4 space-y-3 pb-safe">
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {unenrolledOrganizations.map((org) => (
                   <motion.button
                     key={org.id}
@@ -298,9 +298,10 @@ export function OrganizationSettingsPage() {
             onClick={() => !isProcessing && setShowUnenrollModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
               className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl"
             >
