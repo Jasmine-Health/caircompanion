@@ -76,20 +76,23 @@ export function DashboardPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-gradient-to-r from-[#6F42C1] to-[#8b5cf6] text-white px-4 py-8 md:px-6 md:py-10">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <p className="text-white/80 text-sm font-medium">Welcome back,</p>
-            <h1 className="text-2xl md:text-3xl font-bold mt-1">
-              {summary?.first_name || 'User'} {summary?.last_name || ''}
-            </h1>
-            <p className="text-white/70 text-sm mt-2 flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              {formatDate(new Date())}
-            </p>
-          </motion.div>
+        <div className="max-w-4xl mx-auto grid grid-cols-[1fr_auto] items-center gap-4">
+          <div className="flex-1">
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <p className="text-white/80 text-sm font-medium">Welcome back,</p>
+              <h1 className="text-2xl md:text-3xl font-bold mt-1">
+                {summary?.first_name || 'User'} {summary?.last_name || ''}
+              </h1>
+              <p className="text-white/70 text-sm mt-2 flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                {formatDate(new Date())}
+              </p>
+            </motion.div>
+          </div>
+          <div className="w-20" />
         </div>
       </header>
 

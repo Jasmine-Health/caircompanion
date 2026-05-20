@@ -110,7 +110,7 @@ export function ChatPage() {
     <div className="flex flex-col h-full bg-gray-50">
       {/* Header - hidden on mobile, shown on desktop */}
       <header className="hidden md:block bg-white border-b border-gray-200 px-4 py-6 md:px-6">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+        <div className="max-w-4xl mx-auto grid grid-cols-[1fr_auto] items-center gap-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#6F42C1] to-[#8b5cf6] flex items-center justify-center">
               <MessageSquare className="w-6 h-6 text-white" />
