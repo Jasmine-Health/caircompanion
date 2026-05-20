@@ -5,65 +5,106 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
+export type PWAPlatform = 'ios' | 'android' | 'desktop' | 'other';
+
+const getInitialPlatform = (): PWAPlatform => {
+  if (typeof window === 'undefined') return 'other';
+  const userAgent = window.navigator.userAgent.toLowerCase();
+  const isIOS = /iphone|ipad|ipod/.test(userAgent) || 
+                (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
+  const isAndroid = /android/.test(userAgent);
+
+  if (isIOS) return 'ios';
+  if (isAndroid) return 'android';
+  if (/windows|macintosh|linux/.test(userAgent)) return 'desktop';
+  return 'other';
+};
+
+const getInitialInstalled = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(display-mode: standalone)').matches || 
+         (window.navigator as any).standalone === true;
+};
+
 export function usePWAInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstallable, setIsInstallable] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [isInstalled, setIsInstalled] = useState<boolean>(getInitialInstalled);
+  const [showInstructions, setShowInstructions] = useState(false);
+  const [platform] = useState<PWAPlatform>(getInitialPlatform);
 
   useEffect(() => {
-    // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true);
-      return;
-    }
-
-    // In development, show install button for testing
-    if (import.meta.env.DEV) {
-      setIsInstallable(true);
-    }
-
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setIsInstallable(true);
     };
+
+    const handleDeferredPromptCaptured = () => {
+      if ((window as any).deferredPrompt) {
+        setDeferredPrompt((window as any).deferredPrompt);
+      }
+    };
+
+    // Check synchronously if the prompt was already captured prior to React mounting
+    if ((window as any).deferredPrompt) {
+      setDeferredPrompt((window as any).deferredPrompt);
+    }
 
     const handleAppInstalled = () => {
       setIsInstalled(true);
-      setIsInstallable(false);
       setDeferredPrompt(null);
+      (window as any).deferredPrompt = null;
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('deferredpromptcaptured', handleDeferredPromptCaptured);
     window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('deferredpromptcaptured', handleDeferredPromptCaptured);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
   const install = async () => {
-    if (!deferredPrompt) {
-      // In development without a real prompt, just return false
-      if (import.meta.env.DEV) {
-        console.log('PWA install: No install prompt available (dev mode)');
-        return false;
-      }
+    // If the browser has a captured prompt, ensure we reference it
+    const activePrompt = deferredPrompt || (window as any).deferredPrompt;
+
+    if (!activePrompt) {
+      // Fallback to custom instructions modal if browser doesn't support native prompt
+      setShowInstructions(true);
       return false;
     }
 
-    await deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
+    try {
+      await activePrompt.prompt();
+      const { outcome } = await activePrompt.userChoice;
 
-    if (outcome === 'accepted') {
-      setIsInstalled(true);
-      setIsInstallable(false);
+      if (outcome === 'accepted') {
+        setIsInstalled(true);
+      }
+
+      setDeferredPrompt(null);
+      (window as any).deferredPrompt = null;
+      return outcome === 'accepted';
+    } catch (err) {
+      console.error('PWA install prompt failed, showing fallback instructions:', err);
+      setShowInstructions(true);
+      return false;
     }
-
-    setDeferredPrompt(null);
-    return outcome === 'accepted';
   };
 
-  return { isInstallable, isInstalled, install };
+  // The PWA is installable if it is not already running standalone (installed)
+  const isInstallable = !isInstalled;
+
+  return { 
+    isInstallable, 
+    isInstalled, 
+    install, 
+    showInstructions, 
+    setShowInstructions, 
+    platform 
+  };
 }
+
+

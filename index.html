@@ -10,6 +10,13 @@
     <meta name="apple-mobile-web-app-title" content="CairCompanion" />
     <link rel="apple-touch-icon" href="/logo.png" />
     <title>CairCompanion</title>
+    <script>
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        window.deferredPrompt = e;
+        window.dispatchEvent(new CustomEvent('deferredpromptcaptured'));
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -3,11 +3,12 @@ import { Mic, Square, Download, Volume2, Loader2, WifiOff, AudioLines } from 'lu
 import { Button } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { usePWAInstall } from '../hooks/usePWAInstall';
+import { InstallPromptModal } from '../components/InstallPromptModal';
 import { useVoiceChat } from '../hooks/useVoiceChat';
 
 export function VoicePage() {
   useAuth();
-  const { isInstallable, install } = usePWAInstall();
+  const { isInstallable, install, showInstructions, setShowInstructions, platform } = usePWAInstall();
   const {
     status,
     transcript,
@@ -260,6 +261,13 @@ export function VoicePage() {
               </Button>
             </motion.div>
           )}
+
+          {/* Fallback Install Instructions Modal */}
+          <InstallPromptModal
+            isOpen={showInstructions}
+            onClose={() => setShowInstructions(false)}
+            platform={platform}
+          />
         </div>
       </main>
     </div>

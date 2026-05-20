@@ -5,6 +5,7 @@ import { Mail, Lock, Eye, EyeOff, Download } from 'lucide-react';
 import { Button, Input } from '../../components/ui';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
+import { InstallPromptModal } from '../../components/InstallPromptModal';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
@@ -15,7 +16,7 @@ export function LoginPage() {
   
   const { login } = useAuth();
   const navigate = useNavigate();
-  const { isInstallable, install } = usePWAInstall();
+  const { isInstallable, install, showInstructions, setShowInstructions, platform } = usePWAInstall();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,6 +197,13 @@ export function LoginPage() {
               </Button>
             </motion.div>
           )}
+
+          {/* Fallback Install Instructions Modal */}
+          <InstallPromptModal
+            isOpen={showInstructions}
+            onClose={() => setShowInstructions(false)}
+            platform={platform}
+          />
         </motion.div>
       </div>
 
