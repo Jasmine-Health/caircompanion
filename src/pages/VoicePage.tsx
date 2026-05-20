@@ -1,36 +1,97 @@
-import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, Download, Volume2 } from 'lucide-react';
+import { Mic, Square, Download, Volume2, Loader2, WifiOff, AudioLines } from 'lucide-react';
 import { Button } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { usePWAInstall } from '../hooks/usePWAInstall';
+import { useVoiceChat } from '../hooks/useVoiceChat';
 
 export function VoicePage() {
   useAuth();
   const { isInstallable, install } = usePWAInstall();
-  const [isRecording, setIsRecording] = useState(false);
-  const [isReady] = useState(true);
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const [transcript, setTranscript] = useState('Click the microphone to start speaking');
+  const {
+    status,
+    transcript,
+    transcriptSpeaker,
+    startConversation,
+    stopConversation,
+    error,
+  } = useVoiceChat();
 
-  const toggleRecording = () => {
-    if (isRecording) {
-      setIsRecording(false);
-      setTranscript('Click the microphone to speak again');
-      // Simulate AI response
-      setTimeout(() => {
-        setIsPlayingAudio(true);
-        setTranscript('CairCompanion: Hello! How can I help you today with your health journey?');
-        setTimeout(() => setIsPlayingAudio(false), 3000);
-      }, 1000);
-    } else {
-      setIsRecording(true);
-      setTranscript('Listening... Speak now');
-      // Simulate user speaking
-      setTimeout(() => {
-        setTranscript('You (speaking): How am I doing with my medications today...');
-      }, 1500);
+  // Derived states
+  const isConnecting = status === 'connecting' || status === 'disconnected';
+  const isReady = status === 'ready';
+  const isInConversation = status === 'listening' || status === 'processing' || status === 'speaking';
+  const isListening = status === 'listening';
+  const isSpeaking = status === 'speaking';
+  const isProcessing = status === 'processing';
+  const hasError = status === 'error';
+  const canStart = isReady && !hasError;
+
+  const handleMicClick = () => {
+    if (isInConversation) {
+      stopConversation();
+    } else if (canStart) {
+      startConversation();
     }
+  };
+
+  // Status text shown beneath the mic button
+  const getStatusText = () => {
+    if (isConnecting) return 'Connecting...';
+    if (hasError) return error || 'Connection error';
+    if (isReady) return 'Tap to speak';
+    if (isListening) return 'Listening...';
+    if (isProcessing) return 'Thinking...';
+    if (isSpeaking) return 'Speaking...';
+    return '';
+  };
+
+  // Mic button colour classes
+  const getMicButtonClasses = () => {
+    if (isInConversation) {
+      if (isSpeaking) return 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-emerald-500/30';
+      if (isProcessing) return 'bg-gradient-to-br from-amber-500 to-orange-500 shadow-amber-500/30';
+      return 'bg-gradient-to-br from-red-500 to-rose-600 shadow-red-500/30'; // listening
+    }
+    if (isConnecting) return 'bg-gray-300 shadow-gray-300/20';
+    if (hasError) return 'bg-red-400 shadow-red-400/20';
+    return 'bg-gradient-to-br from-[#6F42C1] to-[#8b5cf6] shadow-[#6F42C1]/30'; // ready
+  };
+
+  // Icon inside mic button
+  const getMicIcon = () => {
+    if (isConnecting) return <Loader2 className="w-12 h-12 md:w-16 md:h-16 text-white animate-spin" />;
+    if (isInConversation) {
+      if (isSpeaking) {
+        return (
+          <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 0.6, repeat: Infinity }}>
+            <Volume2 className="w-12 h-12 md:w-16 md:h-16 text-white" />
+          </motion.div>
+        );
+      }
+      if (isProcessing) {
+        return <Loader2 className="w-12 h-12 md:w-16 md:h-16 text-white animate-spin" />;
+      }
+      // Listening – show stop icon
+      return <Square className="w-10 h-10 md:w-12 md:h-12 text-white" fill="white" />;
+    }
+    if (hasError) return <WifiOff className="w-12 h-12 md:w-16 md:h-16 text-white" />;
+    return <Mic className="w-12 h-12 md:w-16 md:h-16 text-white" />;
+  };
+
+  // Ring animation colours
+  const getRingColour = () => {
+    if (isListening) return 'bg-red-500';
+    if (isSpeaking) return 'bg-emerald-500';
+    if (isProcessing) return 'bg-amber-500';
+    return 'bg-[#6F42C1]';
+  };
+
+  // Transcript label
+  const getTranscriptLabel = () => {
+    if (transcriptSpeaker === 'user') return 'You';
+    if (transcriptSpeaker === 'assistant') return 'CairCompanion';
+    return 'Live Transcript';
   };
 
   return (
@@ -48,62 +109,61 @@ export function VoicePage() {
             </div>
           </div>
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
-            isReady ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+            isInConversation
+              ? 'bg-green-100 text-green-700'
+              : isReady
+              ? 'bg-green-100 text-green-700'
+              : isConnecting
+              ? 'bg-yellow-100 text-yellow-700'
+              : hasError
+              ? 'bg-red-100 text-red-700'
+              : 'bg-gray-100 text-gray-600'
           }`}>
-            <span className={`w-2 h-2 rounded-full ${isReady ? 'bg-green-500' : 'bg-gray-400'}`} />
-            {isReady ? 'Ready' : 'Connecting...'}
+            <span className={`w-2 h-2 rounded-full ${
+              isInConversation || isReady ? 'bg-green-500' :
+              isConnecting ? 'bg-yellow-500 animate-pulse' :
+              hasError ? 'bg-red-500' : 'bg-gray-400'
+            }`} />
+            {isInConversation ? 'In Conversation' :
+             isReady ? 'Ready' :
+             isConnecting ? 'Connecting...' :
+             hasError ? 'Error' : 'Offline'}
           </div>
         </div>
       </header>
 
-      {/* Main content - flex-1 to fill available space */}
+      {/* Main content */}
       <main className="flex-1 flex flex-col max-w-2xl mx-auto w-full px-4">
-        {/* Title text at top */}
+        {/* Title */}
         <div className="text-center pt-6 md:pt-8">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Talk to CairCompanion</h2>
           <p className="text-gray-500">Your AI health assistant is ready to help</p>
         </div>
 
-        {/* Mic button centered in remaining space */}
+        {/* Mic button centered */}
         <div className="flex-1 flex flex-col items-center justify-center">
           {/* Animated Rings */}
           <div className="relative">
             <AnimatePresence>
-              {isRecording && (
+              {isInConversation && (
                 <>
                   <motion.div
                     initial={{ scale: 1, opacity: 0.5 }}
                     animate={{ scale: 1.5, opacity: 0 }}
                     transition={{ duration: 1.5, repeat: Infinity }}
-                    className="absolute inset-0 rounded-full bg-[#6F42C1]"
+                    className={`absolute inset-0 rounded-full ${getRingColour()}`}
                   />
                   <motion.div
                     initial={{ scale: 1, opacity: 0.5 }}
                     animate={{ scale: 1.8, opacity: 0 }}
                     transition={{ duration: 1.5, repeat: Infinity, delay: 0.3 }}
-                    className="absolute inset-0 rounded-full bg-[#6F42C1]"
+                    className={`absolute inset-0 rounded-full ${getRingColour()}`}
                   />
                   <motion.div
                     initial={{ scale: 1, opacity: 0.5 }}
                     animate={{ scale: 2.1, opacity: 0 }}
                     transition={{ duration: 1.5, repeat: Infinity, delay: 0.6 }}
-                    className="absolute inset-0 rounded-full bg-[#6F42C1]"
-                  />
-                </>
-              )}
-              {isPlayingAudio && (
-                <>
-                  <motion.div
-                    initial={{ scale: 1, opacity: 0.3 }}
-                    animate={{ scale: 1.3, opacity: 0 }}
-                    transition={{ duration: 0.8, repeat: Infinity }}
-                    className="absolute inset-0 rounded-full bg-green-500"
-                  />
-                  <motion.div
-                    initial={{ scale: 1, opacity: 0.3 }}
-                    animate={{ scale: 1.5, opacity: 0 }}
-                    transition={{ duration: 0.8, repeat: Infinity, delay: 0.2 }}
-                    className="absolute inset-0 rounded-full bg-green-500"
+                    className={`absolute inset-0 rounded-full ${getRingColour()}`}
                   />
                 </>
               )}
@@ -111,45 +171,40 @@ export function VoicePage() {
 
             {/* Main Mic Button */}
             <motion.button
-              onClick={toggleRecording}
-              disabled={!isReady}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className={`relative z-10 w-36 h-36 md:w-40 md:h-40 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 ${
-                isRecording
-                  ? 'bg-red-500 shadow-red-500/30'
-                  : isPlayingAudio
-                  ? 'bg-green-500 shadow-green-500/30'
-                  : 'bg-gradient-to-br from-[#6F42C1] to-[#8b5cf6] shadow-[#6F42C1]/30'
-              } ${!isReady && 'opacity-50 cursor-not-allowed'}`}
+              id="voice-mic-button"
+              onClick={handleMicClick}
+              disabled={isConnecting}
+              whileHover={!isConnecting ? { scale: 1.05 } : undefined}
+              whileTap={!isConnecting ? { scale: 0.95 } : undefined}
+              className={`relative z-10 w-36 h-36 md:w-40 md:h-40 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 ${getMicButtonClasses()} ${isConnecting && 'cursor-not-allowed opacity-60'}`}
             >
-              {isRecording ? (
-                <MicOff className="w-12 h-12 md:w-16 md:h-16 text-white" />
-              ) : isPlayingAudio ? (
-                <motion.div
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 0.5, repeat: Infinity }}
-                >
-                  <Volume2 className="w-12 h-12 md:w-16 md:h-16 text-white" />
-                </motion.div>
-              ) : (
-                <Mic className="w-12 h-12 md:w-16 md:h-16 text-white" />
-              )}
+              {getMicIcon()}
             </motion.button>
           </div>
 
           {/* Status Text */}
           <motion.p
-            key={isRecording ? 'recording' : isPlayingAudio ? 'playing' : 'idle'}
+            key={status}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-6 text-lg font-medium text-gray-600"
+            className={`mt-6 text-lg font-medium ${hasError ? 'text-red-500' : 'text-gray-600'}`}
           >
-            {isRecording ? 'Listening...' : isPlayingAudio ? 'Speaking...' : 'Tap to speak'}
+            {getStatusText()}
           </motion.p>
+
+          {/* In-conversation hint */}
+          {isInConversation && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-2 text-sm text-gray-400"
+            >
+              {isSpeaking ? 'Speak to interrupt' : isListening ? 'Tap stop to end' : ''}
+            </motion.p>
+          )}
         </div>
 
-        {/* Live Transcript - positioned at bottom */}
+        {/* Live Transcript */}
         <div className="flex-shrink-0 md:pb-2">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -157,11 +212,33 @@ export function VoicePage() {
             className="w-full bg-white rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-5 md:p-6"
           >
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-2.5 h-2.5 rounded-full bg-[#6F42C1] animate-pulse" />
-              <h3 className="font-semibold text-gray-900">Live Transcript</h3>
+              {isInConversation ? (
+                <div className={`w-2.5 h-2.5 rounded-full animate-pulse ${
+                  transcriptSpeaker === 'user' ? 'bg-red-500' :
+                  transcriptSpeaker === 'assistant' ? 'bg-emerald-500' :
+                  'bg-[#6F42C1]'
+                }`} />
+              ) : (
+                <div className="w-2.5 h-2.5 rounded-full bg-[#6F42C1]" />
+              )}
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                {getTranscriptLabel()}
+                {isInConversation && transcriptSpeaker && (
+                  <AudioLines className={`w-4 h-4 ${
+                    transcriptSpeaker === 'user' ? 'text-red-400' : 'text-emerald-400'
+                  }`} />
+                )}
+              </h3>
             </div>
             <p className="text-gray-600 leading-relaxed min-h-[80px] md:min-h-[100px]">
-              {transcript}
+              {transcript || (isConnecting
+                ? 'Connecting to voice assistant...'
+                : isReady
+                ? 'Click the microphone to start speaking'
+                : hasError
+                ? error
+                : ''
+              )}
             </p>
           </motion.div>
 
