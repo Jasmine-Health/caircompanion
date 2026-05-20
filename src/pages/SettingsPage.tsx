@@ -320,16 +320,16 @@ export function SettingsPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50"
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4"
             onClick={() => setShowVoiceModal(false)}
           >
             <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-t-3xl md:rounded-2xl w-full max-w-md max-h-[80vh] overflow-hidden shadow-xl"
+              className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col shadow-xl"
             >
               <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900">Voice Model</h2>
@@ -341,7 +341,7 @@ export function SettingsPage() {
                 </button>
               </div>
 
-              <div className="overflow-y-auto p-4 space-y-3 pb-safe">
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {mockVoiceModels.map((voice) => (
                   <motion.div
                     key={voice.model}
@@ -401,7 +401,7 @@ export function SettingsPage() {
                 ))}
               </div>
 
-              <div className="sticky bottom-0 bg-white border-t border-gray-100 p-4 pb-safe">
+              <div className="sticky bottom-0 bg-white border-t border-gray-100 p-4">
                 <Button
                   className="w-full"
                   onClick={() => setShowVoiceModal(false)}
