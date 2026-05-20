@@ -322,21 +322,28 @@ export function useVoiceChat(): UseVoiceChatReturn {
       }
     };
 
-    ws.onerror = (err) => {
-      console.error('[WS] Error:', err);
-      setError('Connection error. Please try again.');
-      setStatus('error');
+    ws.onerror = () => {
+      // Only show error if we're actively trying to connect or in a conversation
+      // Ignore errors from stale/closed connections during reconnect
+      if (wsRef.current === ws && statusRef.current !== 'disconnected') {
+        console.error('[WS] Connection error');
+        setError('Connection error. Please try again.');
+        setStatus('error');
+      }
     };
 
     ws.onclose = (event) => {
-      console.log('[WS] Disconnected:', event.code, event.reason);
-      if (isConversationActiveRef.current) {
-        // Unexpected close during conversation
-        isConversationActiveRef.current = false;
-        stopMicrophone();
-        stopAudioPlayback();
+      // Only log if this is the current active connection
+      if (wsRef.current === ws) {
+        console.log('[WS] Disconnected:', event.code, event.reason);
+        if (isConversationActiveRef.current) {
+          // Unexpected close during conversation
+          isConversationActiveRef.current = false;
+          stopMicrophone();
+          stopAudioPlayback();
+        }
+        setStatus('disconnected');
       }
-      setStatus('disconnected');
     };
   }, [enqueueAudio, getPlaybackContext, stopAudioPlayback, stopMicrophone]);
 
