@@ -6,6 +6,7 @@ import { OrganizationSelectionPage } from './pages/auth/OrganizationSelectionPag
 import { LoginPage } from './pages/auth/LoginPage';
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
+import { OAuthCallbackPage } from './pages/auth/OAuthCallbackPage';
 import { VoicePage } from './pages/VoicePage';
 import { ChatPage } from './pages/ChatPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -82,6 +83,9 @@ function App() {
             <Route path="/login" element={<OrganizationRoute><PublicRoute><LoginPage /></PublicRoute></OrganizationRoute>} />
             <Route path="/forgot-password" element={<OrganizationRoute><PublicRoute><ForgotPasswordPage /></PublicRoute></OrganizationRoute>} />
             <Route path="/reset-password" element={<OrganizationRoute><PublicRoute><ResetPasswordPage /></PublicRoute></OrganizationRoute>} />
+            
+            {/* OAuth Callback - public route, handles social auth redirects */}
+            <Route path="/oauth-callback" element={<OAuthCallbackPage />} />
 
             {/* Protected Routes */}
             <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>

@@ -117,26 +117,24 @@ export function VoicePage() {
               <p className="text-gray-500 mt-1">Talk to your health companion</p>
             </div>
           </div>
-          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
-            isInConversation
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${isInConversation
               ? 'bg-green-100 text-green-700'
               : isReady
-              ? 'bg-green-100 text-green-700'
-              : isConnecting
-              ? 'bg-yellow-100 text-yellow-700'
-              : hasError
-              ? 'bg-red-100 text-red-700'
-              : 'bg-gray-100 text-gray-600'
-          }`}>
-            <span className={`w-2 h-2 rounded-full ${
-              isInConversation || isReady ? 'bg-green-500' :
-              isConnecting ? 'bg-yellow-500 animate-pulse' :
-              hasError ? 'bg-red-500' : 'bg-gray-400'
-            }`} />
+                ? 'bg-green-100 text-green-700'
+                : isConnecting
+                  ? 'bg-yellow-100 text-yellow-700'
+                  : hasError
+                    ? 'bg-red-100 text-red-700'
+                    : 'bg-gray-100 text-gray-600'
+            }`}>
+            <span className={`w-2 h-2 rounded-full ${isInConversation || isReady ? 'bg-green-500' :
+                isConnecting ? 'bg-yellow-500 animate-pulse' :
+                  hasError ? 'bg-red-500' : 'bg-gray-400'
+              }`} />
             {isInConversation ? 'In Conversation' :
-             isReady ? 'Ready' :
-             isConnecting ? 'Connecting...' :
-             hasError ? 'Error' : 'Offline'}
+              isReady ? 'Ready' :
+                isConnecting ? 'Connecting...' :
+                  hasError ? 'Error' : 'Offline'}
           </div>
         </div>
       </header>
@@ -154,25 +152,25 @@ export function VoicePage() {
           {/* Animated Rings - always rendered, opacity controlled to prevent remount flicker */}
           <div className="relative">
             <motion.div
-              animate={{ 
-                scale: isInConversation ? [1, 1.5, 1] : 1, 
-                opacity: isInConversation ? [0.5, 0, 0.5] : 0 
+              animate={{
+                scale: isInConversation ? [1, 1.5, 1] : 1,
+                opacity: isInConversation ? [0.5, 0, 0.5] : 0
               }}
               transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
               className={`absolute inset-0 rounded-full ${getRingColour()} pointer-events-none`}
             />
             <motion.div
-              animate={{ 
-                scale: isInConversation ? [1, 1.8, 1] : 1, 
-                opacity: isInConversation ? [0.4, 0, 0.4] : 0 
+              animate={{
+                scale: isInConversation ? [1, 1.8, 1] : 1,
+                opacity: isInConversation ? [0.4, 0, 0.4] : 0
               }}
               transition={{ duration: 1.5, repeat: Infinity, delay: 0.3, ease: 'easeOut' }}
               className={`absolute inset-0 rounded-full ${getRingColour()} pointer-events-none`}
             />
             <motion.div
-              animate={{ 
-                scale: isInConversation ? [1, 2.1, 1] : 1, 
-                opacity: isInConversation ? [0.3, 0, 0.3] : 0 
+              animate={{
+                scale: isInConversation ? [1, 2.1, 1] : 1,
+                opacity: isInConversation ? [0.3, 0, 0.3] : 0
               }}
               transition={{ duration: 1.5, repeat: Infinity, delay: 0.6, ease: 'easeOut' }}
               className={`absolute inset-0 rounded-full ${getRingColour()} pointer-events-none`}
@@ -221,20 +219,18 @@ export function VoicePage() {
           >
             <div className="flex items-center gap-2 mb-3">
               {isInConversation ? (
-                <div className={`w-2.5 h-2.5 rounded-full animate-pulse ${
-                  transcriptSpeaker === 'user' ? 'bg-red-500' :
-                  transcriptSpeaker === 'assistant' ? 'bg-emerald-500' :
-                  'bg-[#6F42C1]'
-                }`} />
+                <div className={`w-2.5 h-2.5 rounded-full animate-pulse ${transcriptSpeaker === 'user' ? 'bg-red-500' :
+                    transcriptSpeaker === 'assistant' ? 'bg-emerald-500' :
+                      'bg-[#6F42C1]'
+                  }`} />
               ) : (
                 <div className="w-2.5 h-2.5 rounded-full bg-[#6F42C1]" />
               )}
               <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                 {getTranscriptLabel()}
                 {isInConversation && transcriptSpeaker && (
-                  <AudioLines className={`w-4 h-4 ${
-                    transcriptSpeaker === 'user' ? 'text-red-400' : 'text-emerald-400'
-                  }`} />
+                  <AudioLines className={`w-4 h-4 ${transcriptSpeaker === 'user' ? 'text-red-400' : 'text-emerald-400'
+                    }`} />
                 )}
               </h3>
             </div>
@@ -245,10 +241,10 @@ export function VoicePage() {
               {transcript || (isConnecting
                 ? 'Connecting to voice assistant...'
                 : isReady
-                ? 'Click the microphone to start speaking'
-                : hasError
-                ? error
-                : ''
+                  ? 'Click the microphone to start speaking'
+                  : hasError
+                    ? error
+                    : ''
               )}
             </p>
           </motion.div>

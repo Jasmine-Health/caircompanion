@@ -1,4 +1,4 @@
-import { fetchAPI, fetchAPIWithFormData, API_ENDPOINTS } from '../config/api';
+import { fetchAPI, fetchAPIWithFormData, API_ENDPOINTS, API_CONFIG, APIError } from '../config/api';
 import type { User } from '../types';
 
 export interface LoginRequest {
@@ -100,5 +100,109 @@ export async function verifyResetToken(data: VerifyResetTokenRequest): Promise<{
 export async function refreshToken(): Promise<LoginResponse> {
   return fetchAPI<LoginResponse>(API_ENDPOINTS.REFRESH, {
     method: 'POST',
+  });
+}
+
+// Social Auth Types
+export interface SocialAuthLoginRequest {
+  role?: 'patient' | 'cairgiver';
+  platform?: string;
+  organization_id?: string;
+}
+
+export interface SocialAuthLoginResponse {
+  authorization_url: string;
+  state: string;
+}
+
+export interface AppleAuthRequest {
+  identity_token: string;
+  authorization_code?: string;
+  user?: {
+    name?: {
+      firstName?: string;
+      lastName?: string;
+    };
+    email?: string;
+  };
+  role?: 'patient' | 'cairgiver';
+  organization_id?: string;
+}
+
+export interface AppleAuthResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  user: {
+    email: string;
+    first_name?: string;
+    last_name?: string;
+    display_name: string;
+    apple_user_id?: string;
+    is_active: boolean;
+    auth_provider: string;
+    picture?: string | null;
+    created_at: string;
+    updated_at: string;
+  };
+}
+
+// Social Auth Functions
+export async function getGoogleAuthUrl(
+  role: 'patient' | 'cairgiver' = 'patient',
+  organization_id?: string
+): Promise<SocialAuthLoginResponse> {
+  const params = new URLSearchParams();
+  params.append('role', role);
+  params.append('platform', 'web');
+  if (organization_id) {
+    params.append('organization_id', organization_id);
+  }
+
+  const url = `${API_CONFIG.BASE_URL}${API_ENDPOINTS.GOOGLE_LOGIN}?${params.toString()}`;
+  const response = await fetch(url);
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new APIError(
+      errorData.detail || 'Failed to get Google auth URL',
+      response.status,
+      errorData
+    );
+  }
+
+  return response.json();
+}
+
+export async function getEntraAuthUrl(
+  role: 'patient' | 'cairgiver' = 'patient',
+  organization_id?: string
+): Promise<SocialAuthLoginResponse> {
+  const params = new URLSearchParams();
+  params.append('role', role);
+  params.append('platform', 'web');
+  if (organization_id) {
+    params.append('organization_id', organization_id);
+  }
+
+  const url = `${API_CONFIG.BASE_URL}${API_ENDPOINTS.ENTRA_LOGIN}?${params.toString()}`;
+  const response = await fetch(url);
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new APIError(
+      errorData.detail || 'Failed to get Microsoft auth URL',
+      response.status,
+      errorData
+    );
+  }
+
+  return response.json();
+}
+
+export async function appleAuthCallback(data: AppleAuthRequest): Promise<AppleAuthResponse> {
+  return fetchAPI<AppleAuthResponse>(API_ENDPOINTS.APPLE_CALLBACK, {
+    method: 'POST',
+    body: JSON.stringify(data),
   });
 }

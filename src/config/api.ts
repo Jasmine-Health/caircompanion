@@ -17,6 +17,11 @@ export const API_ENDPOINTS = {
   VERIFY_RESET_TOKEN: '/auth/verify_password_reset_token',
   CHANGE_PASSWORD: '/auth/change_password',
   
+  // Social Auth
+  GOOGLE_LOGIN: '/google_auth/login',
+  APPLE_CALLBACK: '/apple_auth/callback',
+  ENTRA_LOGIN: '/entra_auth/login',
+  
   // Organizations
   ORGANIZATIONS: '/organizations',
   ENROLL: '/organizations/enroll',
