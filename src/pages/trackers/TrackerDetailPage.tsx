@@ -259,7 +259,7 @@ export function TrackerDetailPage() {
 
   if (!config) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="h-full bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-xl font-bold text-gray-900">Tracker not found</h1>
           <Link to="/trackers" className="text-[#6F42C1] mt-2 inline-block">
@@ -272,7 +272,7 @@ export function TrackerDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="h-full bg-gray-50 flex items-center justify-center">
         <div className="w-12 h-12 border-4 border-[#6F42C1] border-t-transparent rounded-full animate-spin" />
       </div>
     );

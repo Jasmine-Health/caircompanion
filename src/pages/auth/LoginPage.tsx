@@ -62,12 +62,12 @@ export function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#6F42C1]/5 via-white to-[#8b5cf6]/5 flex flex-col">
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
+      <div className="flex-1 flex flex-col px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="w-full max-w-md"
+          className="w-full max-w-md mx-auto flex flex-col flex-1"
         >
           {/* Logo */}
           <div className="text-center mb-8">
@@ -94,9 +94,9 @@ export function LoginPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 p-6 md:p-8"
+            className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 p-6 md:p-8 flex-1 flex flex-col"
           >
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5 flex-1 flex flex-col">
               {error && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
@@ -156,7 +156,7 @@ export function LoginPage() {
             </form>
 
             {/* Social Login */}
-            <div className="mt-6">
+            <div className="mt-auto pt-6">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-200" />
