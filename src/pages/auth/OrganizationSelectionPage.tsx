@@ -1,7 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building2, ChevronRight } from 'lucide-react';
+import { Building2, ChevronRight, Download } from 'lucide-react';
+import { Button } from '../../components/ui';
 import { useOrganization } from '../../contexts/OrganizationContext';
+import { usePWAInstall } from '../../hooks/usePWAInstall';
+import { InstallPromptModal } from '../../components/InstallPromptModal';
 
 const container = {
   hidden: { opacity: 0 },
@@ -19,6 +22,7 @@ const item = {
 export function OrganizationSelectionPage() {
   const navigate = useNavigate();
   const { availableOrganizations, selectOrganization } = useOrganization();
+  const { isInstallable, install, showInstructions, setShowInstructions, platform } = usePWAInstall();
 
   const handleSelectOrganization = (org: typeof availableOrganizations[0]) => {
     selectOrganization(org);
@@ -94,10 +98,36 @@ export function OrganizationSelectionPage() {
         </motion.div>
       </div>
 
+      {/* Install PWA Button */}
+      {isInstallable && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="px-4 pb-4 w-full max-w-md mx-auto"
+        >
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={install}
+          >
+            <Download className="w-5 h-5 mr-2" />
+            Install App
+          </Button>
+        </motion.div>
+      )}
+
       {/* Footer */}
       <div className="text-center py-4 text-sm text-gray-500">
         © 2024 CairCompanion. All rights reserved.
       </div>
+
+      {/* Install Instructions Modal */}
+      <InstallPromptModal
+        isOpen={showInstructions}
+        onClose={() => setShowInstructions(false)}
+        platform={platform}
+      />
     </div>
   );
 }
