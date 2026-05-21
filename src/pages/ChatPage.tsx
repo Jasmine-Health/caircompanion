@@ -67,16 +67,24 @@ export function ChatPage() {
     };
 
     ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      setIsConnected(false);
+      // Only log error if this is still the current active connection
+      if (wsRef.current === ws) {
+        console.error('WebSocket error:', error);
+        setIsConnected(false);
+      }
     };
 
     ws.onclose = () => {
-      setIsConnected(false);
-      console.log('WebSocket disconnected');
+      // Only update state if this is still the current active connection
+      if (wsRef.current === ws) {
+        setIsConnected(false);
+        console.log('WebSocket disconnected');
+      }
     };
 
     return () => {
+      // Clear the ref before closing to prevent error/close handlers from firing
+      wsRef.current = null;
       ws.close();
     };
   }, [user]);

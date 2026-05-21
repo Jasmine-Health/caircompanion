@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { 
   Heart, 
   Activity, 
@@ -12,6 +12,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { Badge } from '../components/ui';
+import { CarePlanDetailModal } from '../components/CarePlanDetailModal';
 import { getDailySummary, getAlerts, type DailySummary, type Alert } from '../services/healthDataService';
 import { formatDate } from '../lib/utils';
 import { Link } from 'react-router-dom';
@@ -40,6 +41,18 @@ export function DashboardPage() {
   const [summary, setSummary] = useState<DailySummary | null>(null);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [selectedPlanName, setSelectedPlanName] = useState<string | undefined>(undefined);
+
+  const handleCarePlanClick = useCallback((planId: string, planName: string) => {
+    setSelectedPlanId(planId);
+    setSelectedPlanName(planName);
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setSelectedPlanId(null);
+    setSelectedPlanName(undefined);
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -201,23 +214,29 @@ export function DashboardPage() {
           <motion.div variants={item}>
             <h2 className="font-semibold text-gray-900 text-lg mb-4">Active Care Plans</h2>
             {(summary?.care_plans || []).map((plan) => (
-              <div 
-                key={plan.plan_id} 
-                className="bg-gradient-to-r from-[#6F42C1]/5 to-[#8b5cf6]/5 rounded-2xl p-5 border border-[#6F42C1]/20 mb-4 last:mb-0"
+              <motion.button
+                key={plan.plan_id}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                onClick={() => handleCarePlanClick(plan.plan_id, plan.name)}
+                className="w-full text-left bg-gradient-to-r from-[#6F42C1]/5 to-[#8b5cf6]/5 rounded-2xl p-5 border border-[#6F42C1]/20 mb-4 last:mb-0 hover:border-[#6F42C1]/40 hover:shadow-md transition-all cursor-pointer"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900">{plan.name}</h3>
                     <p className="text-sm text-gray-600 mt-1">{plan.type}</p>
                   </div>
-                  <Badge variant="success">{plan.status}</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="success">{plan.status}</Badge>
+                    <ChevronRight className="w-5 h-5 text-[#6F42C1]" />
+                  </div>
                 </div>
                 <div className="mt-4 pt-4 border-t border-[#6F42C1]/10">
                   <p className="text-sm text-[#6F42C1] font-medium">
                     Current Phase: {plan.phase}
                   </p>
                 </div>
-              </div>
+              </motion.button>
             ))}
           </motion.div>
 
@@ -260,6 +279,14 @@ export function DashboardPage() {
           </motion.div>
         </motion.div>
       </main>
+
+      {/* Care Plan Detail Modal */}
+      <CarePlanDetailModal
+        isOpen={selectedPlanId !== null}
+        onClose={handleCloseModal}
+        planId={selectedPlanId}
+        planName={selectedPlanName}
+      />
     </div>
   );
 }
