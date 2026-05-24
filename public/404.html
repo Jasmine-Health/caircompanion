@@ -5,14 +5,17 @@
     <title>CairCompanion</title>
     <script>
       // Single Page App redirect for GitHub Pages
-      // Redirects all 404s to index.html with the path as a query parameter
-      const path = window.location.pathname;
-      const search = window.location.search;
-      const hash = window.location.hash;
-      window.location.replace(
-        window.location.origin + '/caircompanion/' + 
-        '?redirect=' + encodeURIComponent(path + search + hash)
-      );
+      // Store the path in sessionStorage and redirect to index
+      var basePath = '/caircompanion';
+      var path = window.location.pathname;
+      // Remove base path prefix if present
+      if (path.startsWith(basePath)) {
+        path = path.slice(basePath.length) || '/';
+      }
+      var search = window.location.search;
+      var hash = window.location.hash;
+      sessionStorage.setItem('spa-redirect', path + search + hash);
+      window.location.replace(basePath + '/');
     </script>
   </head>
   <body>
