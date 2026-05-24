@@ -176,7 +176,7 @@ export function useVoiceChat(): UseVoiceChatReturn {
       const audioCtx = new AudioContext({ sampleRate: CAPTURE_SAMPLE_RATE });
       audioContextRef.current = audioCtx;
 
-      await audioCtx.audioWorklet.addModule('/pcm-processor.js');
+      await audioCtx.audioWorklet.addModule(`${import.meta.env.BASE_URL}pcm-processor.js`);
 
       const source = audioCtx.createMediaStreamSource(stream);
       const workletNode = new AudioWorkletNode(audioCtx, 'pcm-processor');
