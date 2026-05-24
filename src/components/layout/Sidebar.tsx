@@ -23,7 +23,7 @@ export function Sidebar() {
     <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 h-screen fixed top-0 left-0 z-40">
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="CairCompanion" className="w-10 h-10" />
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="CairCompanion" className="w-10 h-10" />
           <div>
             <h1 className="font-bold text-gray-900">CairCompanion</h1>
             <p className="text-xs text-gray-500">Health Assistant</p>

@@ -182,7 +182,7 @@ export function InstallPromptModal({ isOpen, onClose, platform }: InstallPromptM
             {/* Header */}
             <div className="text-center mb-6">
               <div className="inline-block p-4 bg-gradient-to-br from-[#6F42C1]/10 to-[#8b5cf6]/10 rounded-2xl mb-4">
-                <img src="/logo.png" alt="CairCompanion" className="w-14 h-14 object-contain mx-auto" />
+                <img src={`${import.meta.env.BASE_URL}logo.png`} alt="CairCompanion" className="w-14 h-14 object-contain mx-auto" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 flex items-center justify-center gap-2">
                 <Download className="w-5 h-5 text-[#6F42C1]" />

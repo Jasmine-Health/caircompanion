@@ -37,7 +37,7 @@ export function MobileHeader() {
     <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-40 md:hidden">
       <div className="flex items-center justify-between px-4 h-14">
         <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="CairCompanion" className="w-9 h-9" />
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="CairCompanion" className="w-9 h-9" />
           <div className="flex flex-col">
             <span className="font-semibold text-gray-900 text-sm leading-tight">CairCompanion</span>
             <span className="text-xs text-gray-500 leading-tight">{pageTitle}</span>

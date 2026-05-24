@@ -153,7 +153,7 @@ export function ChatPage() {
                       <User className="w-4 h-4 text-gray-600" />
                     </div>
                   ) : (
-                    <img src="/logo.png" alt="CairCompanion" className="w-full h-full object-cover" />
+                    <img src={`${import.meta.env.BASE_URL}logo.png`} alt="CairCompanion" className="w-full h-full object-cover" />
                   )}
                 </div>
                 <div className={`max-w-[75%] ${message.role === 'user' ? 'text-right' : ''}`}>
@@ -182,7 +182,7 @@ export function ChatPage() {
                 className="flex gap-3"
               >
                 <div className="w-8 h-8 rounded-full overflow-hidden">
-                  <img src="/logo.png" alt="CairCompanion" className="w-full h-full object-cover" />
+                  <img src={`${import.meta.env.BASE_URL}logo.png`} alt="CairCompanion" className="w-full h-full object-cover" />
                 </div>
                 <div className="bg-white border border-gray-100 shadow-sm rounded-2xl rounded-bl-md px-4 py-3">
                   <div className="flex gap-1">

@@ -89,7 +89,7 @@ export function ResetPasswordPage() {
               transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
               className="inline-block mb-4"
             >
-              <img src="/logo.png" alt="CairCompanion" className="w-20 h-20 mx-auto" />
+              <img src={`${import.meta.env.BASE_URL}logo.png`} alt="CairCompanion" className="w-20 h-20 mx-auto" />
             </motion.div>
             <h1 className="text-2xl font-bold text-gray-900">Reset Password</h1>
             <p className="text-gray-500 mt-1">Enter your new password below</p>
