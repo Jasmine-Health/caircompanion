@@ -40,48 +40,42 @@ export function CarePlanDetailModal({ isOpen, onClose, planId, planName }: CareP
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-x-hidden overflow-y-auto">
-          {/* Backdrop Overlay */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4"
+          onClick={onClose}
+        >
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm"
-          />
-
-          {/* Modal Container */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ type: 'spring', duration: 0.4 }}
-            className="relative w-full max-w-lg md:max-w-2xl max-h-[70vh] md:max-h-[80vh] bg-white rounded-3xl shadow-2xl flex flex-col border border-gray-100 overflow-hidden"
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl w-full max-w-lg md:max-w-2xl max-h-[80vh] flex flex-col shadow-xl overflow-hidden"
           >
-            {/* Close Button */}
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 z-10 p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
             {/* Header */}
-            <div className="bg-gradient-to-r from-[#6F42C1] to-[#8b5cf6] text-white px-6 py-5 pr-14">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                  <FileText className="w-5 h-5" />
+            <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-[#6F42C1]/10 flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-4 h-4 text-[#6F42C1]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold truncate">
+                  <h2 className="text-lg font-bold text-gray-900 truncate">
                     {carePlan?.name || planName || 'Care Plan Details'}
-                  </h3>
+                  </h2>
                   {carePlan?.type && (
-                    <p className="text-white/80 text-sm truncate">{carePlan.type}</p>
+                    <p className="text-xs text-gray-500 truncate">{carePlan.type}</p>
                   )}
                 </div>
               </div>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center flex-shrink-0"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
             </div>
 
             {/* Content */}
@@ -196,7 +190,7 @@ export function CarePlanDetailModal({ isOpen, onClose, planId, planName }: CareP
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
+            <div className="sticky bottom-0 bg-white border-t border-gray-100 p-4">
               <button
                 onClick={onClose}
                 className="w-full py-3 bg-[#6F42C1] text-white font-semibold rounded-xl hover:bg-[#5a32a3] active:scale-[0.98] transition-all focus:outline-none focus:ring-2 focus:ring-[#6F42C1] focus:ring-offset-2"
@@ -205,7 +199,7 @@ export function CarePlanDetailModal({ isOpen, onClose, planId, planName }: CareP
               </button>
             </div>
           </motion.div>
-        </div>
+        </motion.div>
       )}
     </AnimatePresence>
   );
