@@ -195,16 +195,21 @@ export function DashboardPage() {
               {(summary?.medications || []).map((med, index) => (
                 <div 
                   key={index} 
-                  className={`flex items-center gap-4 p-4 ${index < (summary?.medications?.length || 0) - 1 ? 'border-b border-gray-100' : ''}`}
+                  className={`p-4 ${index < (summary?.medications?.length || 0) - 1 ? 'border-b border-gray-100' : ''}`}
                 >
-                  <div className="w-10 h-10 rounded-xl bg-[#6F42C1]/10 flex items-center justify-center flex-shrink-0">
-                    <Pill className="w-5 h-5 text-[#6F42C1]" />
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-[#6F42C1]/10 flex items-center justify-center flex-shrink-0">
+                      <Pill className="w-5 h-5 text-[#6F42C1]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900">{med.name}</p>
+                      <p className="text-sm text-gray-500">{med.dosage} • {med.frequency}</p>
+                    </div>
+                    <span className="text-sm text-gray-500 font-medium">{med.timing}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900">{med.name}</p>
-                    <p className="text-sm text-gray-500">{med.dosage} • {med.frequency}</p>
-                  </div>
-                  <span className="text-sm text-gray-500 font-medium">{med.timing}</span>
+                  {med.instructions && (
+                    <p className="text-sm text-gray-600 mt-2 ml-14 italic">{med.instructions}</p>
+                  )}
                 </div>
               ))}
             </div>
