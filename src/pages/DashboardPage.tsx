@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { 
   Heart, 
   Activity, 
@@ -9,11 +9,14 @@ import {
   AlertCircle,
   CheckCircle2,
   ChevronRight,
-  Calendar
+  Calendar,
+  Clock,
+  Check,
+  MoreVertical
 } from 'lucide-react';
 import { Badge } from '../components/ui';
 import { CarePlanDetailModal } from '../components/CarePlanDetailModal';
-import { getDailySummary, getAlerts, type DailySummary, type Alert } from '../services/healthDataService';
+import { getDailySummary, getAlerts, completeAlert, snoozeAlert, type DailySummary, type Alert } from '../services/healthDataService';
 import { formatDate } from '../lib/utils';
 import { Link } from 'react-router-dom';
 
@@ -43,6 +46,25 @@ export function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [selectedPlanName, setSelectedPlanName] = useState<string | undefined>(undefined);
+  const [actionMenuId, setActionMenuId] = useState<string | null>(null);
+  const [processingAlertId, setProcessingAlertId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setActionMenuId(null);
+      }
+    };
+
+    if (actionMenuId) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [actionMenuId]);
 
   const handleCarePlanClick = useCallback((planId: string, planName: string) => {
     setSelectedPlanId(planId);
@@ -52,6 +74,37 @@ export function DashboardPage() {
   const handleCloseModal = useCallback(() => {
     setSelectedPlanId(null);
     setSelectedPlanName(undefined);
+  }, []);
+
+  const handleCompleteAlert = useCallback(async (alertId: string) => {
+    setProcessingAlertId(alertId);
+    setActionMenuId(null);
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      await completeAlert(alertId, today);
+      setAlerts(prev => prev.map(a => 
+        a.id === alertId ? { ...a, is_completed_today: true, completed_dates: [...a.completed_dates, today] } : a
+      ));
+    } catch (error) {
+      console.error('Failed to complete alert:', error);
+    } finally {
+      setProcessingAlertId(null);
+    }
+  }, []);
+
+  const handleSnoozeAlert = useCallback(async (alertId: string, minutes: number) => {
+    setProcessingAlertId(alertId);
+    setActionMenuId(null);
+    try {
+      const result = await snoozeAlert(alertId, minutes);
+      setAlerts(prev => prev.map(a => 
+        a.id === alertId ? { ...a, snoozed_until: result.snoozed_until } : a
+      ));
+    } catch (error) {
+      console.error('Failed to snooze alert:', error);
+    } finally {
+      setProcessingAlertId(null);
+    }
   }, []);
 
   useEffect(() => {
@@ -249,35 +302,91 @@ export function DashboardPage() {
           <motion.div variants={item} className="pb-8">
             <h2 className="font-semibold text-gray-900 text-lg mb-4">Today's Tasks</h2>
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              {alerts.slice(0, 5).map((alert, index) => (
+              {alerts.map((alert, index) => (
                 <div 
                   key={alert.id} 
-                  className={`flex items-center gap-4 p-4 ${index < 4 ? 'border-b border-gray-100' : ''}`}
+                  className={`p-4 ${index < alerts.length - 1 ? 'border-b border-gray-100' : ''}`}
                 >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                    alert.is_completed_today ? 'bg-green-100' : 'bg-orange-100'
-                  }`}>
-                    {alert.is_completed_today ? (
-                      <CheckCircle2 className="w-5 h-5 text-green-600" />
-                    ) : (
-                      <AlertCircle className="w-5 h-5 text-orange-600" />
+                  <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                      alert.is_completed_today ? 'bg-green-100' : 'bg-orange-100'
+                    }`}>
+                      {processingAlertId === alert.id ? (
+                        <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                      ) : alert.is_completed_today ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-600" />
+                      ) : (
+                        <AlertCircle className="w-5 h-5 text-orange-600" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-medium ${alert.is_completed_today ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
+                        {alert.title}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {alert.time.join(', ')}
+                        {alert.snoozed_until && (
+                          <span className="ml-2 text-amber-600">
+                            • Snoozed until {new Date(alert.snoozed_until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                      alert.type === 'medication' 
+                        ? 'bg-blue-50 text-blue-700' 
+                        : alert.type === 'exercise' 
+                        ? 'bg-green-50 text-green-700' 
+                        : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {alert.type}
+                    </span>
+                    {!alert.is_completed_today && (
+                      <div className="relative" ref={actionMenuId === alert.id ? menuRef : null}>
+                        <button
+                          onClick={() => setActionMenuId(actionMenuId === alert.id ? null : alert.id)}
+                          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                          <MoreVertical className="w-5 h-5 text-gray-500" />
+                        </button>
+                        {actionMenuId === alert.id && (
+                          <div className={`absolute right-0 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-10 min-w-[160px] ${
+                            index >= alerts.length - 3 ? 'bottom-full mb-1' : 'top-full mt-1'
+                          }`}>
+                            <button
+                              onClick={() => handleCompleteAlert(alert.id)}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <Check className="w-4 h-4 text-green-600" />
+                              Mark Complete
+                            </button>
+                            <div className="border-t border-gray-100 my-1" />
+                            <button
+                              onClick={() => handleSnoozeAlert(alert.id, 15)}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <Clock className="w-4 h-4 text-amber-600" />
+                              Snooze 15 min
+                            </button>
+                            <button
+                              onClick={() => handleSnoozeAlert(alert.id, 30)}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <Clock className="w-4 h-4 text-amber-600" />
+                              Snooze 30 min
+                            </button>
+                            <button
+                              onClick={() => handleSnoozeAlert(alert.id, 60)}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <Clock className="w-4 h-4 text-amber-600" />
+                              Snooze 1 hour
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`font-medium ${alert.is_completed_today ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
-                      {alert.title}
-                    </p>
-                    <p className="text-sm text-gray-500">{alert.time.join(', ')}</p>
-                  </div>
-                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                    alert.type === 'medication' 
-                      ? 'bg-blue-50 text-blue-700' 
-                      : alert.type === 'exercise' 
-                      ? 'bg-green-50 text-green-700' 
-                      : 'bg-gray-100 text-gray-600'
-                  }`}>
-                    {alert.type}
-                  </span>
                 </div>
               ))}
             </div>
