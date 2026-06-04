@@ -34,8 +34,8 @@ export function MobileHeader() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-40 md:hidden">
-      <div className="flex items-center justify-between px-4 h-14">
+    <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-40 md:hidden safe-area-top">
+      <div className="flex items-center justify-between px-4 h-14 pt-[env(safe-area-inset-top)]">
         <div className="flex items-center gap-3">
           <img src={`${import.meta.env.BASE_URL}logo.png`} alt="CairCompanion" className="w-9 h-9" />
           <div className="flex flex-col">

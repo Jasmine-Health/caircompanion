@@ -211,7 +211,7 @@ export function VoicePage() {
         </div>
 
         {/* Live Transcript */}
-        <div className="flex-shrink-0 md:pb-2">
+        <div className="flex-shrink-0 pb-4 md:pb-2">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

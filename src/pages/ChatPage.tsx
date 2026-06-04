@@ -136,7 +136,7 @@ export function ChatPage() {
       </header>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-6">
+      <div className="flex-1 overflow-y-auto px-4 py-6 pb-20">
         <div className="max-w-2xl mx-auto space-y-4">
           <AnimatePresence initial={false}>
             {messages.map((message) => (
@@ -212,27 +212,25 @@ export function ChatPage() {
       </div>
 
       {/* Input */}
-      <div className="sticky bottom-16 md:bottom-0 bg-white border-t border-gray-100 px-4 py-3">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center gap-3">
-            <div className="flex-1">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Message CairCompanion..."
-                className="w-full h-11 px-4 rounded-full border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#6F42C1] focus:border-transparent transition-all"
-              />
-            </div>
+      <div className="sticky bottom-above-nav md:!bottom-0 px-4 py-3 pointer-events-none">
+        <div className="max-w-2xl mx-auto pointer-events-auto">
+          <div className="flex items-center gap-3 bg-white rounded-full shadow-lg shadow-black/10 border border-gray-100 p-1.5 pl-4">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Message CairCompanion..."
+              className="flex-1 h-9 bg-transparent focus:outline-none text-sm"
+            />
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleSend}
               disabled={!input.trim()}
-              className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+              className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
                 input.trim()
-                  ? 'bg-[#6F42C1] text-white shadow-lg shadow-[#6F42C1]/30'
+                  ? 'bg-[#6F42C1] text-white shadow-md shadow-[#6F42C1]/30'
                   : 'bg-gray-100 text-gray-400'
               }`}
             >

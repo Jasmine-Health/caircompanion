@@ -8,13 +8,13 @@ export function AppLayout() {
   const isChatPage = location.pathname === '/chat';
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex h-screen h-dvh overflow-hidden bg-gray-50">
       <Sidebar />
       <MobileHeader />
       {/* Add left margin on desktop to account for fixed sidebar */}
       {/* Add top padding on mobile for fixed header, bottom padding for bottom nav */}
       {/* Remove bottom padding on chat page since it has its own sticky input */}
-      <main className={`flex-1 md:ml-64 overflow-y-auto pt-14 md:pt-0 ${isChatPage ? '' : 'pb-24'} md:pb-0`}>
+      <main className={`flex-1 md:ml-64 overflow-y-auto pt-[calc(3.5rem+env(safe-area-inset-top,0px))] md:pt-0 ${isChatPage ? '' : 'pb-bottom-nav'} md:pb-0`}>
         <Outlet />
       </main>
       <BottomNav />
