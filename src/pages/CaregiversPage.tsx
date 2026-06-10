@@ -8,10 +8,12 @@ import {
   Users,
   Clock,
   CheckCircle2,
-  Send
+  Send,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import { Card, CardContent, Button, Input, Avatar, Badge } from '../components/ui';
-import { getCairgivers, getPendingRequests, approveRequest, sendPatientRequest, type Cairgiver, type PendingRequest } from '../services/cairgiverService';
+import { getCairgivers, getPendingRequests, approveRequest, sendPatientRequest, removeCairgiverConnection, type Cairgiver, type PendingRequest } from '../services/cairgiverService';
 
 const container = {
   hidden: { opacity: 0 },
@@ -34,6 +36,8 @@ export function CaregiversPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [removeConfirm, setRemoveConfirm] = useState<Cairgiver | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -92,6 +96,21 @@ export function CaregiversPage() {
       setPendingRequests(prev => prev.filter(r => r.relationship_id !== relationshipId));
     } catch (error) {
       console.error('Failed to reject request:', error);
+    }
+  };
+
+  const handleRemoveCaregiver = async () => {
+    if (!removeConfirm) return;
+    setIsRemoving(true);
+    
+    try {
+      await removeCairgiverConnection(removeConfirm.relationship_id);
+      setCaregivers(prev => prev.filter(c => c.relationship_id !== removeConfirm.relationship_id));
+      setRemoveConfirm(null);
+    } catch (error) {
+      console.error('Failed to remove caregiver:', error);
+    } finally {
+      setIsRemoving(false);
     }
   };
 
@@ -192,6 +211,57 @@ export function CaregiversPage() {
                   </form>
                 </>
               )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Remove Confirmation Modal */}
+      <AnimatePresence>
+        {removeConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4"
+            onClick={() => !isRemoving && setRemoveConfirm(null)}
+          >
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl"
+            >
+              <div className="text-center">
+                <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+                  <AlertTriangle className="w-8 h-8 text-red-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Remove Caregiver</h3>
+                <p className="text-gray-500 mb-6">
+                  Are you sure you want to remove <span className="font-medium text-gray-900">{removeConfirm.cairgiver_name}</span> from your care team? They will no longer have access to your health information.
+                </p>
+                <div className="flex gap-3">
+                  <Button
+                    variant="secondary"
+                    className="flex-1"
+                    onClick={() => setRemoveConfirm(null)}
+                    disabled={isRemoving}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="danger"
+                    className="flex-1"
+                    onClick={handleRemoveCaregiver}
+                    isLoading={isRemoving}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Remove
+                  </Button>
+                </div>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -298,7 +368,18 @@ export function CaregiversPage() {
                         <p className="font-medium text-gray-900">{caregiver.cairgiver_name}</p>
                         <p className="text-sm text-gray-500 truncate">{caregiver.cairgiver_email}</p>
                       </div>
-                      <Badge variant="success">Connected</Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="success">Connected</Badge>
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => setRemoveConfirm(caregiver)}
+                          className="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center hover:bg-red-100 hover:text-red-600 transition-colors"
+                          title="Remove caregiver"
+                        >
+                          <X className="w-4 h-4" />
+                        </motion.button>
+                      </div>
                     </div>
                   ))}
                 </CardContent>

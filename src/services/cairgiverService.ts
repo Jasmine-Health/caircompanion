@@ -125,3 +125,17 @@ export async function sendPatientRequest(cairgiverEmail: string): Promise<{ rela
     body: JSON.stringify({ cairgiver_email: cairgiverEmail }),
   });
 }
+
+export async function removePatientConnection(relationshipId: string): Promise<{ message: string }> {
+  return fetchAPI<{ message: string }>(API_ENDPOINTS.CAIRGIVER_PATIENT_REMOVE, {
+    method: 'POST',
+    body: JSON.stringify({ relationship_id: relationshipId }),
+  });
+}
+
+export async function removeCairgiverConnection(relationshipId: string): Promise<{ message: string }> {
+  return fetchAPI<{ message: string }>(API_ENDPOINTS.CAIRGIVER_CAIRGIVER_REMOVE, {
+    method: 'POST',
+    body: JSON.stringify({ relationship_id: relationshipId }),
+  });
+}
