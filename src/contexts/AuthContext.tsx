@@ -40,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     setUser(null);
     localStorage.removeItem('access_token');
+    localStorage.removeItem('chat_history');
   }, []);
 
   const setTokenAndUser = useCallback((token: string, userData: User | null) => {

@@ -5,9 +5,38 @@ import { useAuth } from '../contexts/AuthContext';
 import { API_CONFIG } from '../config/api';
 import type { ChatMessage } from '../types';
 
+const CHAT_HISTORY_KEY = 'chat_history';
+
+// Helper to load chat history from localStorage
+const loadChatHistory = (): ChatMessage[] => {
+  try {
+    const stored = localStorage.getItem(CHAT_HISTORY_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // Convert timestamp strings back to Date objects
+      return parsed.map((msg: ChatMessage & { timestamp: string }) => ({
+        ...msg,
+        timestamp: new Date(msg.timestamp)
+      }));
+    }
+  } catch (e) {
+    console.error('Failed to load chat history:', e);
+  }
+  return [];
+};
+
+// Helper to save chat history to localStorage
+const saveChatHistory = (messages: ChatMessage[]) => {
+  try {
+    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
+  } catch (e) {
+    console.error('Failed to save chat history:', e);
+  }
+};
+
 export function ChatPage() {
   const { user } = useAuth();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => loadChatHistory());
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -17,6 +46,11 @@ export function ChatPage() {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    saveChatHistory(messages);
+  }, [messages]);
 
   useEffect(() => {
     scrollToBottom();
