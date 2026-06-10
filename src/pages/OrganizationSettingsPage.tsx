@@ -118,7 +118,7 @@ export function OrganizationSettingsPage() {
                     <img
                       src={selectedOrganization.logo}
                       alt={selectedOrganization.name}
-                      className="w-16 h-16 rounded-xl object-cover"
+                      className="w-16 h-16 rounded-xl object-contain bg-gray-50 p-1"
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
@@ -161,7 +161,7 @@ export function OrganizationSettingsPage() {
                         <img
                           src={userOrg.organization.logo}
                           alt={userOrg.organization.name}
-                          className="w-12 h-12 rounded-xl object-cover flex-shrink-0"
+                          className="w-12 h-12 rounded-xl object-contain bg-gray-50 p-1 flex-shrink-0"
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap md:flex-nowrap">
@@ -270,7 +270,7 @@ export function OrganizationSettingsPage() {
                     <img
                       src={org.logo}
                       alt={org.name}
-                      className="w-12 h-12 rounded-xl object-cover"
+                      className="w-12 h-12 rounded-xl object-contain bg-gray-50 p-1"
                     />
                     <div className="flex-1 text-left">
                       <p className="font-semibold text-gray-900">{org.name}</p>
