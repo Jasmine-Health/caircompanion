@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, organizationId?: string) => Promise<void>;
   logout: () => void;
   setTokenAndUser: (token: string, userData: User | null) => void;
 }
@@ -31,8 +31,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const response = await loginAPI({ email, password });
+  const login = useCallback(async (email: string, password: string, organizationId?: string) => {
+    const response = await loginAPI({
+      email,
+      password,
+      role: 'patient',
+      organization_id: organizationId,
+    });
     setUser(response.user);
     localStorage.setItem('access_token', response.access_token);
   }, []);

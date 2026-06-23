@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, Download } from 'lucide-react';
 import { Button, Input } from '../../components/ui';
 import { useAuth } from '../../contexts/AuthContext';
+import { useOrganization } from '../../contexts/OrganizationContext';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 import { InstallPromptModal } from '../../components/InstallPromptModal';
 import { getGoogleAuthUrl, getEntraAuthUrl } from '../../services/authService';
@@ -16,12 +17,13 @@ export function LoginPage() {
   const [error, setError] = useState('');
   
   const { login } = useAuth();
+  const { selectedOrganization } = useOrganization();
   const navigate = useNavigate();
   const { isInstallable, install, showInstructions, setShowInstructions, platform } = usePWAInstall();
 
   const handleGoogleLogin = async () => {
     try {
-      const response = await getGoogleAuthUrl('patient');
+      const response = await getGoogleAuthUrl('patient', selectedOrganization?.id);
       window.location.href = response.authorization_url;
     } catch (error) {
       console.error('Google login error:', error);
@@ -31,7 +33,7 @@ export function LoginPage() {
 
   const handleMicrosoftLogin = async () => {
     try {
-      const response = await getEntraAuthUrl('patient');
+      const response = await getEntraAuthUrl('patient', selectedOrganization?.id);
       window.location.href = response.authorization_url;
     } catch (error) {
       console.error('Microsoft login error:', error);
@@ -51,7 +53,7 @@ export function LoginPage() {
     setIsLoading(true);
 
     try {
-      await login(email, password);
+      await login(email, password, selectedOrganization?.id);
       navigate('/home');
     } catch {
       setError('Invalid email or password');

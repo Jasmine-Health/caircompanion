@@ -17,7 +17,14 @@ interface OrganizationContextType {
 const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
 
 export function OrganizationProvider({ children }: { children: ReactNode }) {
-  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
+  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(() => {
+    try {
+      const stored = localStorage.getItem('selectedOrganization');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
   const [userOrganizations, setUserOrganizations] = useState<UserOrganization[]>([]);
   const [availableOrganizations, setAvailableOrganizations] = useState<Organization[]>([]);
   const [isLoading, setIsLoading] = useState(true);
