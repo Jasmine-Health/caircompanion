@@ -1,0 +1,32 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  nodeVersion: '20.x'
+
+steps:
+- task: NodeTool@0
+  displayName: Use Node.js 20
+  inputs:
+    versionSpec: $(nodeVersion)
+
+- script: npm ci
+  displayName: Install dependencies
+
+- script: npm run lint
+  displayName: Lint
+
+- script: npm run build
+  displayName: Build production bundle
+  env:
+    VITE_API_BASE_URL: $(VITE_API_BASE_URL)
+
+- task: PublishPipelineArtifact@1
+  displayName: Publish production bundle
+  inputs:
+    targetPath: dist
+    artifact: caircompanion
+    publishLocation: pipeline
