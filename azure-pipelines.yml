@@ -6,6 +6,7 @@ pool:
 
 variables:
   nodeVersion: '20.x'
+  VITE_API_BASE_URL: 'https://api.cairiqhealth.ai'
   dockerRegistryServiceConnection: '470f6d78-f0c3-48a3-86bb-16bf34680ebc'
   imageRepository: 'caircompanion'
   tag: '$(Build.BuildId)'
