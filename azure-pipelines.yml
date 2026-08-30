@@ -1,0 +1,82 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  nodeVersion: '20.x'
+  VITE_API_BASE_URL: 'https://api.cairiqhealth.ai'
+  dockerRegistryServiceConnection: '470f6d78-f0c3-48a3-86bb-16bf34680ebc'
+  imageRepository: 'caircompanion'
+  containerRegistry: 'cairiqacr.azurecr.io'
+  tag: '$(Build.BuildId)'
+  kubernetesServiceConnection: 'DEV-AKS-NS'
+  aksNamespace: 'dev-cairiq'
+
+stages:
+- stage: Build
+  displayName: Build and push image
+  jobs:
+  - job: Build
+    displayName: Build
+    steps:
+    - task: NodeTool@0
+      displayName: Use Node.js 20
+      inputs:
+        versionSpec: $(nodeVersion)
+
+    - script: npm install --legacy-peer-deps
+      displayName: Install dependencies
+
+    - script: |
+        sed -i "s|base: '/caircompanion/'|base: '/'|" vite.config.ts
+        npm run build
+      displayName: Build production bundle
+      env:
+        VITE_API_BASE_URL: $(VITE_API_BASE_URL)
+
+    - script: |
+        printf '%s\n' \
+          'FROM cairiqacr.azurecr.io/base/nginx:1.27-alpine' \
+          'COPY nginx.conf /etc/nginx/conf.d/default.conf' \
+          'COPY dist /usr/share/nginx/html' \
+          'EXPOSE 80' > Dockerfile
+      displayName: Create production container definition
+
+    - task: Docker@2
+      displayName: Build and push container
+      inputs:
+        command: buildAndPush
+        repository: $(imageRepository)
+        dockerfile: Dockerfile
+        containerRegistry: $(dockerRegistryServiceConnection)
+        tags: |
+          $(tag)
+          latest
+
+- stage: Deploy
+  displayName: Deploy to DEV AKS
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: Deploy
+    displayName: Deploy CairCompanion
+    steps:
+    - task: Kubernetes@1
+      displayName: Update CairCompanion image
+      inputs:
+        connectionType: 'Kubernetes Service Connection'
+        kubernetesServiceEndpoint: $(kubernetesServiceConnection)
+        namespace: $(aksNamespace)
+        command: set
+        arguments: image deployment/caircompanion caircompanion=$(containerRegistry)/$(imageRepository):$(tag)
+
+    - task: Kubernetes@1
+      displayName: Wait for rollout
+      inputs:
+        connectionType: 'Kubernetes Service Connection'
+        kubernetesServiceEndpoint: $(kubernetesServiceConnection)
+        namespace: $(aksNamespace)
+        command: rollout
+        arguments: status deployment/caircompanion --timeout=180s

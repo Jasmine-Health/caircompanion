@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: caircompanion
+  namespace: dev-cairiq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: caircompanion
+  template:
+    metadata:
+      labels:
+        app: caircompanion
+    spec:
+      imagePullSecrets:
+        - name: cairiqacr-auth
+      containers:
+        - name: caircompanion
+          image: cairiqacr.azurecr.io/caircompanion:893
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: caircompanion
+  namespace: dev-cairiq
+spec:
+  selector:
+    app: caircompanion
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: caircompanion
+  namespace: dev-cairiq
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: caircompanion.dev.cairiqhealth.ai
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: caircompanion
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - caircompanion.dev.cairiqhealth.ai
+      secretName: caircompanion-tls

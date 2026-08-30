@@ -81,7 +81,7 @@ export function LoginPage() {
             >
               <img src={`${import.meta.env.BASE_URL}logo.png`} alt="CairCompanion" className="w-20 h-20 mx-auto" />
             </motion.div>
-            <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Welcome</h1>
             <p className="text-gray-500 mt-1">Sign in to CairCompanion</p>
             <Link
               to="/select-organization"
