@@ -29,6 +29,24 @@ stages:
     - script: npm install --legacy-peer-deps
       displayName: Install dependencies
 
+    - script: npm run test:coverage
+      displayName: Run tests with coverage
+
+    - task: PublishCodeCoverageResults@2
+      displayName: Publish code coverage
+      condition: succeededOrFailed()
+      inputs:
+        summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml'
+        pathToSources: '$(System.DefaultWorkingDirectory)/src'
+        failIfCoverageEmpty: true
+
+    - task: PublishPipelineArtifact@1
+      displayName: Publish HTML coverage report
+      condition: succeededOrFailed()
+      inputs:
+        targetPath: '$(System.DefaultWorkingDirectory)/coverage'
+        artifact: 'code-coverage-report'
+
     - script: |
         sed -i "s|base: '/caircompanion/'|base: '/'|" vite.config.ts
         npm run build
