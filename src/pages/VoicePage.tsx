@@ -144,7 +144,7 @@ export function VoicePage() {
         {/* Title */}
         <div className="text-center pt-6 md:pt-8">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Talk to CairCompanion</h2>
-          <p className="text-gray-500">Your CairIQ AI health assistant is ready to help</p>
+          <p className="text-gray-500">Your AI health assistant is ready to help</p>
         </div>
 
         {/* Mic button centered */}
