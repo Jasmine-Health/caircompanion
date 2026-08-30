@@ -45,7 +45,13 @@ stages:
           sonar.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
           sonar.javascript.lcov.reportPaths=coverage/lcov.info
           sonar.coverage.exclusions=src/main.tsx,src/vite-env.d.ts
-          sonar.branch.name=
+
+    - bash: |
+        cleaned=$(node -e 'const params = JSON.parse(process.env.SONARQUBE_SCANNER_PARAMS); delete params["sonar.branch.name"]; process.stdout.write(JSON.stringify(params));')
+        echo "##vso[task.setvariable variable=SONARQUBE_SCANNER_PARAMS;issecret=true]$cleaned"
+      displayName: Configure SonarQube Community Edition
+      env:
+        SONARQUBE_SCANNER_PARAMS: $(SONARQUBE_SCANNER_PARAMS)
 
     - script: npm run test:coverage
       displayName: Run tests with coverage
