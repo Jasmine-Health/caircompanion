@@ -48,7 +48,7 @@ stages:
 
     - bash: |
         cleaned=$(node -e 'const params = JSON.parse(process.env.SONARQUBE_SCANNER_PARAMS); delete params["sonar.branch.name"]; process.stdout.write(JSON.stringify(params));')
-        echo "##vso[task.setvariable variable=SONARQUBE_SCANNER_PARAMS;issecret=true]$cleaned"
+        echo "##vso[task.setvariable variable=SONARQUBE_SCANNER_PARAMS]$cleaned"
       displayName: Configure SonarQube Community Edition
       env:
         SONARQUBE_SCANNER_PARAMS: $(SONARQUBE_SCANNER_PARAMS)
