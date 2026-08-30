@@ -301,3 +301,40 @@ export async function getTrackersSummary(date?: string, patientEmail?: string): 
     headers,
   });
 }
+
+export interface PatientRecord {
+  id?: string;
+  name?: Array<{ given?: string[]; family?: string }>;
+  birthDate?: string;
+  gender?: string;
+  telecom?: Array<{ system?: string; value?: string }>;
+  address?: Array<{ line?: string[]; city?: string; state?: string; postalCode?: string }>;
+}
+
+export interface EncounterRecord {
+  id: string;
+  status: string;
+  type?: Array<{ coding?: Array<{ display?: string }> }>;
+  period?: { start?: string; end?: string };
+  serviceProvider?: { display?: string };
+}
+
+export interface DiagnosticReportRecord {
+  id: string;
+  status: string;
+  code?: { coding?: Array<{ display?: string }> };
+  effectiveDateTime?: string;
+  conclusion?: string;
+}
+
+export async function getPatientData(): Promise<PatientRecord[]> {
+  return fetchAPI<PatientRecord[]>(API_ENDPOINTS.COLLECTION_PATIENT);
+}
+
+export async function getEncounters(): Promise<EncounterRecord[]> {
+  return fetchAPI<EncounterRecord[]>(API_ENDPOINTS.COLLECTION_ENCOUNTER);
+}
+
+export async function getDiagnosticReports(): Promise<DiagnosticReportRecord[]> {
+  return fetchAPI<DiagnosticReportRecord[]>(API_ENDPOINTS.COLLECTION_DIAGNOSTIC_REPORT);
+}

@@ -206,3 +206,34 @@ export async function appleAuthCallback(data: AppleAuthRequest): Promise<AppleAu
     body: JSON.stringify(data),
   });
 }
+
+export async function updateTimezone(timezone?: string): Promise<{ message: string }> {
+  const tz = timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return fetchAPI<{ message: string }>(API_ENDPOINTS.TIMEZONE, {
+    method: 'PUT',
+    body: JSON.stringify({ timezone: tz }),
+  });
+}
+
+export async function deleteAccount(wipeOut: boolean): Promise<void> {
+  const url = `${API_CONFIG.BASE_URL}${API_ENDPOINTS.DELETE_ACCOUNT}`;
+  const token = localStorage.getItem('access_token');
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ wipe_out: wipeOut }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new APIError(
+      (errorData as { detail?: string; message?: string }).detail ||
+        (errorData as { message?: string }).message ||
+        'Failed to delete account',
+      response.status,
+      errorData
+    );
+  }
+}

@@ -1,26 +1,16 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mic, MessageSquare, LayoutDashboard, Activity, Users, Settings } from 'lucide-react';
 import { cn } from '../../lib/utils';
-
-const navItems = [
-  { path: '/voice', icon: Mic, label: 'Voice' },
-  { path: '/chat', icon: MessageSquare, label: 'Chat' },
-  { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { path: '/trackers', icon: Activity, label: 'Trackers' },
-  { path: '/caregivers', icon: Users, label: 'Caregivers' },
-  { path: '/settings', icon: Settings, label: 'Settings' },
-];
+import { bottomTabItems } from '../../config/navigation';
 
 export function BottomNav() {
   const location = useLocation();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 md:hidden">
-      <div className="grid grid-cols-6 h-16 pb-[env(safe-area-inset-bottom)]">
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.path || 
-            (item.path === '/trackers' && location.pathname.startsWith('/trackers'));
+      <div className="grid grid-cols-5 h-16 pb-[env(safe-area-inset-bottom)]">
+        {bottomTabItems.map((item) => {
+          const isActive = location.pathname === item.path;
           const Icon = item.icon;
 
           return (
@@ -31,7 +21,7 @@ export function BottomNav() {
             >
               {isActive && (
                 <motion.div
-                  layoutId="activeIndicator"
+                  layoutId="activeTabIndicator"
                   className="absolute top-0 w-8 h-1 bg-[#6F42C1] rounded-full"
                   initial={false}
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
@@ -39,7 +29,7 @@ export function BottomNav() {
               )}
               <motion.div
                 className={cn(
-                  'flex flex-col items-center justify-center gap-1 py-2 px-1 transition-colors',
+                  'flex flex-col items-center justify-center gap-0.5 py-2 px-1 transition-colors',
                   isActive ? 'text-[#6F42C1]' : 'text-gray-500'
                 )}
                 whileTap={{ scale: 0.9 }}
