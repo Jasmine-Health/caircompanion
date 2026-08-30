@@ -29,6 +29,23 @@ stages:
     - script: npm install --legacy-peer-deps
       displayName: Install dependencies
 
+    - task: SonarQubePrepare@7
+      displayName: Prepare SonarQube analysis
+      inputs:
+        SonarQube: 'new-sonar-server'
+        scannerMode: 'cli'
+        configMode: 'manual'
+        cliProjectKey: 'caircompanion'
+        cliProjectName: 'CairCompanion'
+        cliSources: 'src'
+        extraProperties: |
+          sonar.sourceEncoding=UTF-8
+          sonar.tests=src
+          sonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
+          sonar.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
+          sonar.javascript.lcov.reportPaths=coverage/lcov.info
+          sonar.coverage.exclusions=src/main.tsx,src/vite-env.d.ts
+
     - script: npm run test:coverage
       displayName: Run tests with coverage
 
@@ -46,6 +63,14 @@ stages:
       inputs:
         targetPath: '$(System.DefaultWorkingDirectory)/coverage'
         artifact: 'code-coverage-report'
+
+    - task: SonarQubeAnalyze@7
+      displayName: Run SonarQube analysis
+
+    - task: SonarQubePublish@7
+      displayName: Publish SonarQube quality gate
+      inputs:
+        pollingTimeoutSec: '300'
 
     - script: |
         sed -i "s|base: '/caircompanion/'|base: '/'|" vite.config.ts

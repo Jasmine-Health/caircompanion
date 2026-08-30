@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=cobertura --coverage.reporter=html"
+    "test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=cobertura --coverage.reporter=html --coverage.reporter=lcov"
   },
   "dependencies": {
     "clsx": "^2.1.1",
