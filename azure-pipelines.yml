@@ -11,6 +11,8 @@ variables:
   imageRepository: 'caircompanion'
   containerRegistry: 'cairiqacr.azurecr.io'
   tag: '$(Build.BuildId)'
+  kubernetesServiceConnection: 'DEV-AKS-NS'
+  aksNamespace: 'dev-cairiq'
 
 stages:
 - stage: Build
@@ -58,21 +60,23 @@ stages:
   dependsOn: Build
   condition: succeeded()
   jobs:
-  - deployment: Deploy
+  - job: Deploy
     displayName: Deploy CairCompanion
-    environment: 'dev-cairiq-ns.dev-cairiq'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - checkout: self
+    steps:
+    - task: Kubernetes@1
+      displayName: Update CairCompanion image
+      inputs:
+        connectionType: 'Kubernetes Service Connection'
+        kubernetesServiceEndpoint: $(kubernetesServiceConnection)
+        namespace: $(aksNamespace)
+        command: set
+        arguments: image deployment/caircompanion caircompanion=$(containerRegistry)/$(imageRepository):$(tag)
 
-          - task: KubernetesManifest@0
-            displayName: Deploy image to AKS
-            inputs:
-              action: deploy
-              namespace: dev-cairiq
-              manifests: |
-                $(Build.SourcesDirectory)/k8s/caircompanion.yaml
-              containers: |
-                $(containerRegistry)/$(imageRepository):$(tag)
+    - task: Kubernetes@1
+      displayName: Wait for rollout
+      inputs:
+        connectionType: 'Kubernetes Service Connection'
+        kubernetesServiceEndpoint: $(kubernetesServiceConnection)
+        namespace: $(aksNamespace)
+        command: rollout
+        arguments: status deployment/caircompanion --timeout=180s
