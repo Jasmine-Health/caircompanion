@@ -45,6 +45,7 @@ stages:
           sonar.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
           sonar.javascript.lcov.reportPaths=coverage/lcov.info
           sonar.coverage.exclusions=src/main.tsx,src/vite-env.d.ts
+          sonar.branch.name=
 
     - script: npm run test:coverage
       displayName: Run tests with coverage
