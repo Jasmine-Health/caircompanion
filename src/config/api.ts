@@ -62,6 +62,22 @@ export const API_ENDPOINTS = {
   // Voice
   VOICE_SAMPLE: '/voice/sample',
   VOICE_MODELS: '/voice/models',
+  VOICE_SETTINGS: '/voice/settings',
+
+  // Account
+  TIMEZONE: '/auth/timezone',
+  DELETE_ACCOUNT: '/auth/account',
+  SET_PUSH_TOKEN: '/auth/set_push_token',
+
+  // Connectors
+  CONNECTORS: '/connectors/',
+  CONNECTOR: (ehrSystem: string) => `/connectors/${ehrSystem}`,
+  CONNECTOR_AUTHORIZE: (ehrSystem: string) => `/connectors/${ehrSystem}/authorize`,
+
+  // Collections
+  COLLECTION_PATIENT: '/collections/Patient',
+  COLLECTION_ENCOUNTER: '/collections/Encounter',
+  COLLECTION_DIAGNOSTIC_REPORT: '/collections/DiagnosticReport',
 };
 
 export class APIError extends Error {

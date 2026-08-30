@@ -228,7 +228,7 @@ export function SettingsPage() {
                 </button>
 
                 <button
-                  onClick={() => navigate('/organization-settings')}
+                  onClick={() => navigate('/organizations')}
                   className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors"
                 >
                   <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">

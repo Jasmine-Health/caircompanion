@@ -1,18 +1,10 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mic, MessageSquare, LayoutDashboard, Activity, Users, Settings, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
 import { useOrganization } from '../../contexts/OrganizationContext';
-
-const navItems = [
-  { path: '/voice', icon: Mic, label: 'Voice' },
-  { path: '/chat', icon: MessageSquare, label: 'Chat' },
-  { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { path: '/trackers', icon: Activity, label: 'Trackers' },
-  { path: '/caregivers', icon: Users, label: 'Caregivers' },
-  { path: '/settings', icon: Settings, label: 'Settings' },
-];
+import { drawerMenuItems } from '../../config/navigation';
 
 export function Sidebar() {
   const location = useLocation();
@@ -20,48 +12,49 @@ export function Sidebar() {
   const { selectedOrganization } = useOrganization();
 
   return (
-    <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 h-screen fixed top-0 left-0 z-40">
+    <aside className="hidden md:flex flex-col w-72 bg-white border-r border-gray-200 h-screen fixed top-0 left-0 z-40">
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <img src={`${import.meta.env.BASE_URL}logo.png`} alt="CairCompanion" className="w-10 h-10" />
           <div>
-            <h1 className="font-bold text-gray-900">CairCompanion</h1>
-            <p className="text-xs text-gray-500">Health Assistant</p>
+            <div className="text-lg font-black tracking-tight">
+              <span className="text-gray-900">C</span>
+              <span className="text-orange-500">ai</span>
+              <span className="text-gray-900">rIQ</span>
+            </div>
+            <p className="text-[10px] font-semibold text-gray-500 tracking-widest uppercase">CairCompanion</p>
           </div>
           {selectedOrganization && (
-            <img 
-              src={selectedOrganization.logo} 
-              alt={selectedOrganization.name} 
-              className="w-9 h-9 rounded-lg object-contain"
+            <img
+              src={selectedOrganization.logo}
+              alt={selectedOrganization.name}
+              className="w-9 h-9 rounded-lg object-contain ml-auto"
             />
           )}
         </div>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1">
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.path || 
-            (item.path === '/trackers' && location.pathname.startsWith('/trackers'));
+      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto hide-scrollbar">
+        {drawerMenuItems.map((item) => {
+          const isActive =
+            location.pathname === item.path ||
+            (item.path !== '/voice' && location.pathname.startsWith(item.path));
           const Icon = item.icon;
 
           return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className="relative block"
-            >
+            <NavLink key={item.path} to={item.path} className="relative block">
               <motion.div
                 className={cn(
                   'flex items-center gap-3 px-4 py-3 rounded-xl transition-colors',
-                  isActive 
-                    ? 'text-[#6F42C1] bg-[#6F42C1]/10' 
+                  isActive
+                    ? 'text-[#6F42C1] bg-[#6F42C1]/10'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 )}
                 whileHover={{ x: 4 }}
                 whileTap={{ scale: 0.98 }}
               >
                 <Icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 2} />
-                <span className="font-medium">{item.label}</span>
+                <span className="font-medium text-sm">{item.name}</span>
               </motion.div>
             </NavLink>
           );

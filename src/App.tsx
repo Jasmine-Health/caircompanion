@@ -10,6 +10,11 @@ import { OAuthCallbackPage } from './pages/auth/OAuthCallbackPage';
 import { VoicePage } from './pages/VoicePage';
 import { ChatPage } from './pages/ChatPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { AlertsPage, AppointmentsPage } from './pages/AlertsPage';
+import { MedicationsPage, ExercisePage, MoodPage, DietPage } from './pages/TrackerPages';
+import { CarePlanPage } from './pages/CarePlanPage';
+import { HealthDataPage } from './pages/HealthDataPage';
+import { ConnectorsPage } from './pages/ConnectorsPage';
 import { TrackersPage } from './pages/trackers/TrackersPage';
 import { TrackerDetailPage } from './pages/trackers/TrackerDetailPage';
 import { CaregiversPage } from './pages/CaregiversPage';
@@ -76,31 +81,43 @@ function App() {
       <OrganizationProvider>
         <AuthProvider>
           <Routes>
-            {/* Organization Selection - before login */}
             <Route path="/select-organization" element={<OrganizationSelectionPage />} />
-            
-            {/* Public Routes - require organization selection */}
+
             <Route path="/login" element={<OrganizationRoute><PublicRoute><LoginPage /></PublicRoute></OrganizationRoute>} />
             <Route path="/forgot-password" element={<OrganizationRoute><PublicRoute><ForgotPasswordPage /></PublicRoute></OrganizationRoute>} />
             <Route path="/reset-password" element={<OrganizationRoute><PublicRoute><ResetPasswordPage /></PublicRoute></OrganizationRoute>} />
-            
-            {/* OAuth Callback - public route, handles social auth redirects */}
             <Route path="/oauth-callback" element={<OAuthCallbackPage />} />
 
-            {/* Protected Routes */}
             <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route index element={<Navigate to="/voice" replace />} />
+
+              {/* Voice & Chat - unchanged */}
               <Route path="voice" element={<VoicePage />} />
               <Route path="chat" element={<ChatPage />} />
+
+              {/* iOS bottom tab screens */}
+              <Route path="alerts" element={<AlertsPage />} />
               <Route path="dashboard" element={<DashboardPage />} />
+              <Route path="medications" element={<MedicationsPage />} />
+              <Route path="care-plan" element={<CarePlanPage />} />
+
+              {/* Drawer menu screens */}
+              <Route path="health-data" element={<HealthDataPage />} />
+              <Route path="appointments" element={<AppointmentsPage />} />
+              <Route path="exercise" element={<ExercisePage />} />
+              <Route path="mood" element={<MoodPage />} />
+              <Route path="diet" element={<DietPage />} />
+              <Route path="connectors" element={<ConnectorsPage />} />
+              <Route path="caregivers" element={<CaregiversPage />} />
+              <Route path="organizations" element={<OrganizationSettingsPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+
+              {/* Legacy routes kept for compatibility */}
               <Route path="trackers" element={<TrackersPage />} />
               <Route path="trackers/:trackerId" element={<TrackerDetailPage />} />
-              <Route path="caregivers" element={<CaregiversPage />} />
-              <Route path="organization-settings" element={<OrganizationSettingsPage />} />
-              <Route path="settings" element={<SettingsPage />} />
+              <Route path="organization-settings" element={<Navigate to="/organizations" replace />} />
             </Route>
 
-            {/* Fallback */}
             <Route path="*" element={<Navigate to="/select-organization" replace />} />
           </Routes>
         </AuthProvider>
