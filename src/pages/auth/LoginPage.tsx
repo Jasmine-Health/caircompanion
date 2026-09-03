@@ -54,7 +54,7 @@ export function LoginPage() {
 
     try {
       await login(email, password, selectedOrganization?.id);
-      navigate('/home');
+      navigate('/voice');
     } catch {
       setError('Invalid email or password');
     } finally {
@@ -155,6 +155,13 @@ export function LoginPage() {
               >
                 Sign In
               </Button>
+
+              <p className="text-center text-sm text-gray-500 pt-1">
+                Don&apos;t have an account?{' '}
+                <Link to="/register" className="font-semibold text-[#6F42C1] hover:text-[#5a32a3]">
+                  Sign Up
+                </Link>
+              </p>
             </form>
 
             {/* Social Login */}
