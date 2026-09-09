@@ -9,7 +9,6 @@ import {
   AlertCircle,
   CheckCircle2,
   ChevronRight,
-  Calendar,
   Clock,
   Check,
   MoreVertical
@@ -17,7 +16,6 @@ import {
 import { Badge } from '../components/ui';
 import { CarePlanDetailModal } from '../components/CarePlanDetailModal';
 import { getDailySummary, getAlerts, completeAlert, snoozeAlert, type DailySummary, type Alert } from '../services/healthDataService';
-import { formatDate } from '../lib/utils';
 import { Link } from 'react-router-dom';
 
 const vitalIcons: Record<string, React.ReactNode> = {
@@ -132,37 +130,20 @@ export function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="h-full bg-gray-50 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-[#6F42C1] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-full bg-gray-50 flex items-center justify-center py-16">
+        <div className="w-10 h-10 border-4 border-[#6F42C1] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-[#6F42C1] to-[#8b5cf6] text-white px-4 py-8 md:px-6 md:py-10">
-        <div className="max-w-4xl mx-auto grid grid-cols-[1fr_auto] items-center gap-4">
-          <div className="flex-1">
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <p className="text-white/80 text-sm font-medium">Welcome back,</p>
-              <h1 className="text-2xl md:text-3xl font-bold mt-1">
-                {summary?.first_name || 'User'} {summary?.last_name || ''}
-              </h1>
-              <p className="text-white/70 text-sm mt-2 flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                {formatDate(new Date())}
-              </p>
-            </motion.div>
-          </div>
-          <div className="w-20" />
+    <div className="min-h-full bg-gray-50">
+      <div className="px-4 py-4 md:px-6 md:py-6 max-w-4xl mx-auto">
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-1">Your health at a glance</p>
         </div>
-      </header>
 
-      <main className="max-w-4xl mx-auto px-4 md:px-6 py-6 space-y-6">
         <motion.div
           variants={container}
           initial="hidden"
@@ -170,7 +151,7 @@ export function DashboardPage() {
           className="space-y-6"
         >
           {/* Quick Stats */}
-          <motion.div variants={item} className="grid grid-cols-2 gap-4 -mt-12">
+          <motion.div variants={item} className="grid grid-cols-2 gap-4">
             <div className="bg-white rounded-2xl shadow-lg p-5 border border-gray-100">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
@@ -305,7 +286,9 @@ export function DashboardPage() {
               {alerts.map((alert, index) => (
                 <div 
                   key={alert.id} 
-                  className={`p-4 ${index < alerts.length - 1 ? 'border-b border-gray-100' : ''}`}
+                  className={`p-4 ${index < alerts.length - 1 ? 'border-b border-gray-100' : ''} ${
+                    alert.is_completed_today ? 'opacity-60' : ''
+                  }`}
                 >
                   <div className="flex items-center gap-4">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
@@ -320,10 +303,27 @@ export function DashboardPage() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`font-medium ${alert.is_completed_today ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
+                      <p className="font-medium text-gray-900">
                         {alert.title}
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                        <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                          alert.type === 'medication' 
+                            ? 'bg-red-50 text-red-600' 
+                            : alert.type === 'exercise' 
+                            ? 'bg-green-50 text-green-700' 
+                            : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          {alert.type.charAt(0).toUpperCase() + alert.type.slice(1)}
+                        </span>
+                        {alert.is_completed_today && (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-600">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Done
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">
                         {alert.time.join(', ')}
                         {alert.snoozed_until && (
                           <span className="ml-2 text-amber-600">
@@ -332,15 +332,6 @@ export function DashboardPage() {
                         )}
                       </p>
                     </div>
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                      alert.type === 'medication' 
-                        ? 'bg-blue-50 text-blue-700' 
-                        : alert.type === 'exercise' 
-                        ? 'bg-green-50 text-green-700' 
-                        : 'bg-gray-100 text-gray-600'
-                    }`}>
-                      {alert.type}
-                    </span>
                     {!alert.is_completed_today && (
                       <div className="relative" ref={actionMenuId === alert.id ? menuRef : null}>
                         <button
@@ -392,9 +383,8 @@ export function DashboardPage() {
             </div>
           </motion.div>
         </motion.div>
-      </main>
+      </div>
 
-      {/* Care Plan Detail Modal */}
       <CarePlanDetailModal
         isOpen={selectedPlanId !== null}
         onClose={handleCloseModal}

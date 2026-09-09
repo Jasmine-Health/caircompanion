@@ -23,7 +23,7 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         scope: '/caircompanion/',
-        start_url: '/caircompanion/',
+        start_url: '/caircompanion/select-organization',
         icons: [
           {
             src: 'logo.png',

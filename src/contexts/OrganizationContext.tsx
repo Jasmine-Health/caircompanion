@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { Organization, UserOrganization } from '../types';
+import { DEFAULT_ORGANIZATION_NAME, findOrganizationByName } from '../config/organization';
 import { getOrganizations, getMyEnrollments, switchOrganization as switchOrgAPI, enrollInOrganization as enrollOrgAPI, unenrollFromOrganization as unenrollOrgAPI, getCurrentOrganization } from '../services/organizationService';
 
 interface OrganizationContextType {
@@ -42,6 +43,15 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
           logo: org.logo_url,
         }));
         setAvailableOrganizations(orgs);
+
+        const storedOrg = localStorage.getItem('selectedOrganization');
+        if (!storedOrg) {
+          const defaultOrg = findOrganizationByName(orgs, DEFAULT_ORGANIZATION_NAME);
+          if (defaultOrg) {
+            setSelectedOrganization(defaultOrg);
+            localStorage.setItem('selectedOrganization', JSON.stringify(defaultOrg));
+          }
+        }
 
         // Load user enrollments and current organization if authenticated
         if (token) {

@@ -9,8 +9,10 @@ import { usePWAInstall } from '../../hooks/usePWAInstall';
 import { InstallPromptModal } from '../../components/InstallPromptModal';
 import { getGoogleAuthUrl, getEntraAuthUrl } from '../../services/authService';
 
+const DEFAULT_EMAIL = 'joe@example.com';
+
 export function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(DEFAULT_EMAIL);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,7 +56,7 @@ export function LoginPage() {
 
     try {
       await login(email, password, selectedOrganization?.id);
-      navigate('/home');
+      navigate('/voice');
     } catch {
       setError('Invalid email or password');
     } finally {
@@ -155,6 +157,13 @@ export function LoginPage() {
               >
                 Sign In
               </Button>
+
+              <p className="text-center text-sm text-gray-500 pt-1">
+                Don&apos;t have an account?{' '}
+                <Link to="/register" className="font-semibold text-[#6F42C1] hover:text-[#5a32a3]">
+                  Sign Up
+                </Link>
+              </p>
             </form>
 
             {/* Social Login */}

@@ -5,10 +5,17 @@ import {
   ChevronLeft,
   ChevronRight,
   CheckCircle2,
-  AlertCircle,
-  Clock,
-  MoreVertical,
   Check,
+  CalendarClock,
+  Moon,
+  Pill,
+  Dumbbell,
+  UtensilsCrossed,
+  Activity,
+  Brain,
+  Wind,
+  Calendar,
+  type LucideIcon,
 } from 'lucide-react';
 import {
   getAlerts,
@@ -25,6 +32,22 @@ const alertFilters = [
   { id: 'diet', label: 'Diet', color: '#FF9800' },
   { id: 'monitoring', label: 'Monitoring', color: '#2196F3' },
 ] as const;
+
+const alertTypeMeta: Record<string, { label: string; color: string; icon: LucideIcon }> = {
+  medication: { label: 'Medication', color: '#F44336', icon: Pill },
+  exercise: { label: 'Exercise', color: '#4CAF50', icon: Dumbbell },
+  diet: { label: 'Diet', color: '#FF9800', icon: UtensilsCrossed },
+  monitoring: { label: 'Monitoring', color: '#2196F3', icon: Activity },
+  meditation: { label: 'Meditation', color: '#8B5CF6', icon: Brain },
+  breathing: { label: 'Breathing', color: '#3B82F6', icon: Wind },
+  appointment: { label: 'Appointment', color: '#9C27B0', icon: Calendar },
+};
+
+function getAlertTypeMeta(type: string) {
+  if (alertTypeMeta[type]) return alertTypeMeta[type];
+  const label = type.charAt(0).toUpperCase() + type.slice(1);
+  return { label, color: '#6B7280', icon: Bell };
+}
 
 interface AlertsListPageProps {
   title: string;
@@ -43,7 +66,6 @@ export function AlertsListPage({
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
-  const [actionMenuId, setActionMenuId] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<string | null>(null);
   const [showSnoozeModal, setShowSnoozeModal] = useState<Alert | null>(null);
@@ -86,7 +108,6 @@ export function AlertsListPage({
 
   const handleComplete = async (alertId: string) => {
     setProcessingId(alertId);
-    setActionMenuId(null);
     try {
       await completeAlert(alertId, dateString);
       setAlerts((prev) =>
@@ -130,6 +151,24 @@ export function AlertsListPage({
     }
   }, [snackbar]);
 
+  const isAppointments = alertType === 'appointment';
+  const emptyState = isAppointments
+    ? {
+        icon: CalendarClock,
+        iconClassName: 'text-purple-600',
+        iconBgClassName: 'bg-purple-100',
+        title: 'No Appointments',
+        message: 'No appointments found for this date. Try selecting a different date.',
+      }
+    : {
+        icon: Bell,
+        iconClassName: 'text-gray-400',
+        iconBgClassName: 'bg-gray-100',
+        title: 'No Alerts',
+        message: 'No alerts for this date',
+      };
+  const EmptyIcon = emptyState.icon;
+
   return (
     <div className="min-h-full bg-gray-50">
       <div className="px-4 py-4 md:px-6 md:py-6 max-w-2xl mx-auto">
@@ -172,91 +211,118 @@ export function AlertsListPage({
             <div className="w-10 h-10 border-4 border-[#6F42C1] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : filteredAlerts.length === 0 ? (
-          <div className="text-center py-16">
-            <Bell className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">No alerts for this date</p>
+          <div className="text-center py-16 px-6">
+            <div
+              className={`w-24 h-24 rounded-full ${emptyState.iconBgClassName} flex items-center justify-center mx-auto mb-4`}
+            >
+              <EmptyIcon className={`w-10 h-10 ${emptyState.iconClassName}`} />
+            </div>
+            <p className="text-lg font-semibold text-gray-900 mb-2">{emptyState.title}</p>
+            <p className="text-sm text-gray-500 max-w-xs mx-auto">{emptyState.message}</p>
           </div>
         ) : (
           <div className="space-y-3 pb-8">
-            {filteredAlerts.map((alert) => (
+            {filteredAlerts.map((alert) => {
+              const typeMeta = getAlertTypeMeta(alert.type);
+              const TypeIcon = typeMeta.icon;
+              const displayTime = alert.time[0] ?? '';
+
+              return (
               <motion.div
                 key={alert.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm"
+                className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden"
               >
-                <div className="flex items-start gap-3">
-                  <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                      alert.is_completed_today ? 'bg-green-100' : 'bg-orange-100'
-                    }`}
-                  >
-                    {processingId === alert.id ? (
-                      <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                    ) : alert.is_completed_today ? (
-                      <CheckCircle2 className="w-5 h-5 text-green-600" />
-                    ) : (
-                      <AlertCircle className="w-5 h-5 text-orange-600" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className={`font-medium ${
-                        alert.is_completed_today ? 'text-gray-400 line-through' : 'text-gray-900'
-                      }`}
+                <div className={`p-4 ${alert.is_completed_today ? 'opacity-60' : ''}`}>
+                  <div className="flex items-start gap-3">
+                    <div
+                      className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: `${typeMeta.color}26` }}
                     >
-                      {alert.title}
-                    </p>
-                    {alert.description && (
-                      <p className="text-sm text-gray-500 mt-0.5">{alert.description}</p>
-                    )}
-                    <p className="text-sm text-gray-500 mt-1">
-                      {alert.time.join(', ')}
+                      {processingId === alert.id ? (
+                        <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <TypeIcon className="w-5 h-5" style={{ color: typeMeta.color }} />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-semibold text-gray-900 leading-snug">{alert.title}</p>
+                        {displayTime && (
+                          <span
+                            className="flex-shrink-0 text-xs font-medium px-2 py-1 rounded-md"
+                            style={{
+                              color: typeMeta.color,
+                              backgroundColor: `${typeMeta.color}1F`,
+                            }}
+                          >
+                            {displayTime}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                        <span
+                          className="text-[11px] px-2 py-0.5 rounded"
+                          style={{
+                            color: typeMeta.color,
+                            backgroundColor: `${typeMeta.color}1A`,
+                          }}
+                        >
+                          {typeMeta.label}
+                        </span>
+                        {alert.is_completed_today && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-100 text-emerald-600">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Done
+                          </span>
+                        )}
+                      </div>
+
+                      {alert.description && (
+                        <p className="text-sm text-gray-500 mt-2 line-clamp-2">{alert.description}</p>
+                      )}
                       {alert.snoozed_until && (
-                        <span className="ml-2 text-amber-600">
+                        <p className="text-sm text-amber-600 mt-1">
                           Snoozed until{' '}
                           {new Date(alert.snoozed_until).toLocaleTimeString([], {
                             hour: '2-digit',
                             minute: '2-digit',
                           })}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                  {!alert.is_completed_today && (
-                    <div className="relative">
-                      <button
-                        onClick={() => setActionMenuId(actionMenuId === alert.id ? null : alert.id)}
-                        className="p-2 hover:bg-gray-100 rounded-lg"
-                      >
-                        <MoreVertical className="w-5 h-5 text-gray-500" />
-                      </button>
-                      {actionMenuId === alert.id && (
-                        <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-10 min-w-[160px]">
-                          <button
-                            onClick={() => handleComplete(alert.id)}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
-                          >
-                            <Check className="w-4 h-4 text-green-600" />
-                            Complete
-                          </button>
-                          <button
-                            onClick={() => {
-                              setActionMenuId(null);
-                              setShowSnoozeModal(alert);
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
-                          >
-                            <Clock className="w-4 h-4 text-amber-600" />
-                            Snooze
-                          </button>
-                        </div>
+                        </p>
                       )}
                     </div>
-                  )}
+                  </div>
                 </div>
+
+                {!alert.is_completed_today && (
+                  <>
+                    <div className="border-t border-gray-100" />
+                    <div className="flex">
+                      <button
+                        onClick={() => handleComplete(alert.id)}
+                        disabled={processingId === alert.id}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-emerald-600 hover:bg-emerald-50 disabled:opacity-50 transition-colors"
+                      >
+                        <Check className="w-4 h-4" />
+                        Complete
+                      </button>
+                      <div className="w-px bg-gray-100 self-center h-5" />
+                      <button
+                        onClick={() => setShowSnoozeModal(alert)}
+                        disabled={processingId === alert.id}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-amber-500 hover:bg-amber-50 disabled:opacity-50 transition-colors"
+                      >
+                        <Moon className="w-4 h-4" />
+                        Snooze
+                      </button>
+                    </div>
+                  </>
+                )}
               </motion.div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
