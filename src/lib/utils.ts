@@ -24,5 +24,5 @@ export function formatTime(date: Date | string): string {
 }
 
 export function formatDateTime(date: Date | string): string {
-  return `${formatDate(date)} at ${formatTime(date)}`;
+  return `${formatDate(date)} • ${formatTime(date)}`;
 }

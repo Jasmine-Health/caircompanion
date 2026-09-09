@@ -9,7 +9,6 @@ import {
   Moon, 
   Smile,
   ChevronRight,
-  Activity
 } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui';
 import { 
@@ -115,33 +114,22 @@ export function TrackersPage() {
 
   if (isLoading) {
     return (
-      <div className="h-full bg-gray-50 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-[#6F42C1] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-full bg-gray-50 flex items-center justify-center py-16">
+        <div className="w-10 h-10 border-4 border-[#6F42C1] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header - hidden on mobile, shown on desktop */}
-      <header className="hidden md:block bg-white border-b border-gray-200 px-4 py-6 md:px-6">
-        <div className="max-w-4xl mx-auto grid grid-cols-[1fr_auto] items-center gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#6F42C1] to-[#8b5cf6] flex items-center justify-center">
-              <Activity className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Health Trackers</h1>
-              <p className="text-gray-500 mt-1">Monitor your health data</p>
-            </div>
-          </div>
-          <div className="w-20" />
-        </div>
-      </header>
-
-      <main className="max-w-2xl mx-auto px-4 py-6">
+    <div className="min-h-full bg-gray-50">
+      <div className="px-4 py-4 md:px-6 md:py-6 max-w-2xl mx-auto">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Today's Summary</h2>
+          <h1 className="text-2xl font-bold text-gray-900">Health Trackers</h1>
+          <p className="text-sm text-gray-500 mt-1">Monitor your health data</p>
+        </div>
+
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold text-gray-900">Today's Summary</h2>
           <p className="text-sm text-gray-500 mt-1">Tap on a section to view details and history</p>
         </div>
         <motion.div
@@ -182,7 +170,7 @@ export function TrackersPage() {
             );
           })}
         </motion.div>
-      </main>
+      </div>
     </div>
   );
 }

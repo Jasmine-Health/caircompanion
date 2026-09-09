@@ -11,6 +11,8 @@ export function MedicationsPage() {
       iconColor="text-purple-600"
       bgColor="bg-purple-100"
       fetchData={getMedications}
+      showDateTime
+      useDateRange={false}
     />
   );
 }
@@ -24,6 +26,7 @@ export function ExercisePage() {
       iconColor="text-green-600"
       bgColor="bg-green-100"
       fetchData={getExercise}
+      showDateTime
     />
   );
 }

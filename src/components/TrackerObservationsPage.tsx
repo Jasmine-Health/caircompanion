@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import {
   type TrackerObservation,
 } from '../services/healthDataService';
-import { formatTime } from '../lib/utils';
+import { formatTime, formatDateTime } from '../lib/utils';
+import { APIError } from '../config/api';
+import { Button } from './ui';
 
 type TrackerFetcher = (params: { start_date?: string; end_date?: string }) => Promise<{
   observations: TrackerObservation[];
@@ -17,6 +20,9 @@ interface TrackerObservationsPageProps {
   iconColor: string;
   bgColor: string;
   fetchData: TrackerFetcher;
+  showDateTime?: boolean;
+  /** iOS tracker v2 APIs load without date filters by default */
+  useDateRange?: boolean;
 }
 
 export function TrackerObservationsPage({
@@ -26,26 +32,44 @@ export function TrackerObservationsPage({
   iconColor,
   bgColor,
   fetchData,
+  showDateTime = false,
+  useDateRange = true,
 }: TrackerObservationsPageProps) {
   const [observations, setObservations] = useState<TrackerObservation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const params: { start_date?: string; end_date?: string } = {};
+      if (useDateRange) {
         const end = new Date().toISOString().split('T')[0];
         const start = new Date();
         start.setDate(start.getDate() - 30);
-        const data = await fetchData({ start_date: start.toISOString().split('T')[0], end_date: end });
-        setObservations(data.observations);
-      } catch (error) {
-        console.error(`Failed to load ${title}:`, error);
-      } finally {
-        setIsLoading(false);
+        params.start_date = start.toISOString().split('T')[0];
+        params.end_date = end;
       }
-    };
+      const data = await fetchData(params);
+      setObservations(data.observations ?? []);
+    } catch (err) {
+      console.error(`Failed to load ${title}:`, err);
+      if (err instanceof APIError) {
+        setError(err.message);
+      } else {
+        setError('Unable to load records right now. Please try again.');
+      }
+      setObservations([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchData, title, useDateRange]);
+
+  useEffect(() => {
     load();
-  }, [fetchData, title]);
+  }, [load, reloadKey]);
 
   if (isLoading) {
     return (
@@ -63,7 +87,17 @@ export function TrackerObservationsPage({
           <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
         </div>
 
-        {observations.length === 0 ? (
+        {error ? (
+          <div className="text-center py-16 px-4">
+            <Icon className={`w-12 h-12 mx-auto mb-3 ${iconColor} opacity-40`} />
+            <p className="text-gray-700 font-medium mb-2">Could not load {title.toLowerCase()}</p>
+            <p className="text-sm text-gray-500 mb-4 max-w-sm mx-auto">{error}</p>
+            <Button variant="outline" onClick={() => setReloadKey((k) => k + 1)}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Try again
+            </Button>
+          </div>
+        ) : observations.length === 0 ? (
           <div className="text-center py-16">
             <Icon className={`w-12 h-12 mx-auto mb-3 ${iconColor} opacity-40`} />
             <p className="text-gray-500">No records found</p>
@@ -88,7 +122,10 @@ export function TrackerObservationsPage({
                       {obs.unit ? ` ${obs.unit}` : ''}
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
-                      {obs.source} • {formatTime(obs.effective_date || obs.recorded_at)}
+                      {obs.source} •{' '}
+                      {showDateTime
+                        ? formatDateTime(obs.effective_date || obs.recorded_at)
+                        : formatTime(obs.effective_date || obs.recorded_at)}
                     </p>
                   </div>
                   <span

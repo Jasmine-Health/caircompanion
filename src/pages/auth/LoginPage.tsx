@@ -9,8 +9,10 @@ import { usePWAInstall } from '../../hooks/usePWAInstall';
 import { InstallPromptModal } from '../../components/InstallPromptModal';
 import { getGoogleAuthUrl, getEntraAuthUrl } from '../../services/authService';
 
+const DEFAULT_EMAIL = 'joe@example.com';
+
 export function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(DEFAULT_EMAIL);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

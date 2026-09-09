@@ -15,6 +15,7 @@ import {
   Building2,
   Settings,
   Mic,
+  Activity,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -48,6 +49,7 @@ export const drawerMenuItems: MenuItem[] = [
   { name: 'Chat', icon: MessageSquare, destination: 'chat', path: '/chat' },
   { name: 'Dashboard', icon: LayoutDashboard, destination: 'dashboard', path: '/dashboard' },
   { name: 'Health Data', icon: HeartPulse, destination: 'health-data', path: '/health-data' },
+  { name: 'Health Trackers', icon: Activity, destination: 'trackers', path: '/trackers' },
   { name: 'Alerts', icon: Bell, destination: 'alerts', path: '/alerts' },
   { name: 'Appointments', icon: CalendarClock, destination: 'appointments', path: '/appointments' },
   { name: 'Medications', icon: Pill, destination: 'medications', path: '/medications' },
@@ -109,7 +111,7 @@ export function getPageTitle(pathname: string): string {
 export function getDestinationFromPath(pathname: string): AppDestination {
   const item = drawerMenuItems.find((m) => m.path === pathname || pathname.startsWith(m.path + '/'));
   if (item) return item.destination;
-  if (pathname.startsWith('/trackers')) return 'health-data';
+  if (pathname.startsWith('/trackers')) return 'trackers';
   if (pathname === '/organization-settings') return 'organizations';
   return 'dashboard';
 }

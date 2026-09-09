@@ -272,42 +272,35 @@ export function TrackerDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="h-full bg-gray-50 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-[#6F42C1] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-full bg-gray-50 flex items-center justify-center py-16">
+        <div className="w-10 h-10 border-4 border-[#6F42C1] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header - hidden on mobile, shown on desktop */}
-      <header className="hidden md:block bg-white border-b border-gray-200 px-4 py-6 md:px-6">
-        <div className="max-w-4xl mx-auto grid grid-cols-[1fr_auto] items-center gap-4">
-          <div className="flex-1">
-            <Link 
-              to="/trackers" 
-              className="inline-flex items-center text-gray-500 hover:text-gray-700 mb-4"
-            >
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Back to Trackers
-            </Link>
-            <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-xl ${config.bgColor} flex items-center justify-center`}>
-                <Icon className={`w-6 h-6 ${config.iconColor}`} />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">{config.name}</h1>
-                <p className="text-gray-500 mt-1">Track your {config.name.toLowerCase()} data</p>
-              </div>
+    <div className="min-h-full bg-gray-50">
+      <div className="px-4 py-4 md:px-6 md:py-6 max-w-4xl mx-auto">
+        <Link
+          to="/trackers"
+          className="inline-flex items-center text-gray-500 hover:text-gray-700 mb-4"
+        >
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          Back to Trackers
+        </Link>
+        <div className="mb-4">
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-xl ${config.bgColor} flex items-center justify-center`}>
+              <Icon className={`w-6 h-6 ${config.iconColor}`} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">{config.name}</h1>
+              <p className="text-sm text-gray-500 mt-1">Track your {config.name.toLowerCase()} data</p>
             </div>
           </div>
-          <div className="w-20" />
         </div>
-      </header>
 
-      {/* Date Filter */}
-      <div className="bg-white border-b border-gray-100 px-4 py-3">
-        <div className="max-w-4xl mx-auto flex items-center gap-2 overflow-x-auto hide-scrollbar">
+        <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar mb-4">
           <button 
             onClick={() => setSelectedFilter('all')}
             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
@@ -360,7 +353,7 @@ export function TrackerDetailPage() {
           </button>
         </div>
         {selectedFilter === 'custom' && (
-          <div className="max-w-4xl mx-auto mt-3 flex items-center gap-3">
+          <div className="mb-4 flex items-center gap-3">
             <div className="flex-1">
               <input
                 type="date"
@@ -380,9 +373,7 @@ export function TrackerDetailPage() {
             </div>
           </div>
         )}
-      </div>
 
-      <main className="max-w-4xl mx-auto px-4 py-6">
         {/* Summary Cards */}
         {observations.length > 0 && (
           <motion.div variants={item} className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
@@ -459,7 +450,7 @@ export function TrackerDetailPage() {
             </CardContent>
           </Card>
         </motion.div>
-      </main>
+      </div>
     </div>
   );
 }

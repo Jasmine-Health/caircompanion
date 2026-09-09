@@ -34,7 +34,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/select-organization" replace />;
   }
 
   return <>{children}</>;
@@ -113,8 +113,6 @@ function App() {
               <Route path="caregivers" element={<CaregiversPage />} />
               <Route path="organizations" element={<OrganizationSettingsPage />} />
               <Route path="settings" element={<SettingsPage />} />
-
-              {/* Legacy routes kept for compatibility */}
               <Route path="trackers" element={<TrackersPage />} />
               <Route path="trackers/:trackerId" element={<TrackerDetailPage />} />
               <Route path="organization-settings" element={<Navigate to="/organizations" replace />} />

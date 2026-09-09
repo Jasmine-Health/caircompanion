@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building2, ChevronRight, Download } from 'lucide-react';
+import { Building2, ChevronRight, Check, Download } from 'lucide-react';
 import { Button } from '../../components/ui';
 import { useOrganization } from '../../contexts/OrganizationContext';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
@@ -21,7 +21,7 @@ const item = {
 
 export function OrganizationSelectionPage() {
   const navigate = useNavigate();
-  const { availableOrganizations, selectOrganization } = useOrganization();
+  const { availableOrganizations, selectedOrganization, selectOrganization } = useOrganization();
   const { isInstallable, install, showInstructions, setShowInstructions, platform } = usePWAInstall();
 
   const handleSelectOrganization = (org: typeof availableOrganizations[0]) => {
@@ -70,30 +70,51 @@ export function OrganizationSelectionPage() {
             </div>
 
             <div className="space-y-2">
-              {availableOrganizations.map((org) => (
-                <motion.button
-                  key={org.id}
-                  variants={item}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => handleSelectOrganization(org)}
-                  className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-100 hover:border-[#6F42C1]/30 hover:bg-[#6F42C1]/5 transition-all"
-                >
-                  <img
-                    src={org.logo}
-                    alt={org.name}
-                    className="w-12 h-12 rounded-xl object-contain"
-                  />
-                  <div className="flex-1 text-left">
-                    <p className="font-semibold text-gray-900">{org.name}</p>
-                    {org.description && (
-                      <p className="text-sm text-gray-500 line-clamp-1">{org.description}</p>
+              {availableOrganizations.map((org) => {
+                const isSelected = selectedOrganization?.id === org.id;
+
+                return (
+                  <motion.button
+                    key={org.id}
+                    variants={item}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => handleSelectOrganization(org)}
+                    className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${
+                      isSelected
+                        ? 'border-[#6F42C1] bg-[#6F42C1]/5 shadow-sm shadow-[#6F42C1]/10'
+                        : 'border-gray-100 hover:border-[#6F42C1]/30 hover:bg-[#6F42C1]/5'
+                    }`}
+                  >
+                    <img
+                      src={org.logo}
+                      alt={org.name}
+                      className="w-12 h-12 rounded-xl object-contain"
+                    />
+                    <div className="flex-1 text-left">
+                      <p className="font-semibold text-gray-900">{org.name}</p>
+                      {org.description && (
+                        <p className="text-sm text-gray-500 line-clamp-1">{org.description}</p>
+                      )}
+                    </div>
+                    {isSelected ? (
+                      <Check className="w-5 h-5 text-[#6F42C1]" />
+                    ) : (
+                      <ChevronRight className="w-5 h-5 text-gray-400" />
                     )}
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
-                </motion.button>
-              ))}
+                  </motion.button>
+                );
+              })}
             </div>
+
+            {selectedOrganization && (
+              <Button
+                className="w-full mt-4"
+                onClick={() => navigate('/login')}
+              >
+                Continue with {selectedOrganization.name}
+              </Button>
+            )}
           </motion.div>
         </motion.div>
       </div>

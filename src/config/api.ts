@@ -92,6 +92,21 @@ export class APIError extends Error {
   }
 }
 
+function messageFromErrorData(errorData: unknown, fallback: string, status?: number): string {
+  if (status === 502) {
+    return 'The health data service is temporarily unavailable. Please try again in a moment.';
+  }
+  if (status === 401) {
+    return 'Your session has expired. Please sign in again.';
+  }
+  if (!errorData || typeof errorData !== 'object') return fallback;
+  const data = errorData as { message?: string; detail?: unknown };
+  if (typeof data.message === 'string' && data.message) return data.message;
+  if (typeof data.detail === 'string' && data.detail) return data.detail;
+  if (Array.isArray(data.detail) && data.detail[0]?.msg) return String(data.detail[0].msg);
+  return fallback;
+}
+
 export async function fetchAPI<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -121,7 +136,7 @@ export async function fetchAPI<T>(
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new APIError(
-        errorData.message || 'API request failed',
+        messageFromErrorData(errorData, 'API request failed', response.status),
         response.status,
         errorData
       );
@@ -163,7 +178,7 @@ export async function fetchAPIWithFormData<T>(
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new APIError(
-        errorData.message || 'API request failed',
+        messageFromErrorData(errorData, 'API request failed', response.status),
         response.status,
         errorData
       );
