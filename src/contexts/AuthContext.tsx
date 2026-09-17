@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { User } from '../types';
 import { login as loginAPI, getCurrentUser, updateTimezone } from '../services/authService';
+import { clearCachedVoiceModel, resolveUserVoiceModel } from '../services/voiceService';
 
 interface AuthContextType {
   user: User | null;
@@ -17,6 +18,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const persistVoicePreference = useCallback(() => {
+    resolveUserVoiceModel().catch((error) => {
+      console.error('[Voice] Failed to resolve voice preference:', error);
+    });
+  }, []);
+
   const syncTimezone = useCallback(async () => {
     try {
       await updateTimezone();
@@ -32,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .then((userData) => {
           setUser(userData);
           syncTimezone();
+          persistVoicePreference();
         })
         .catch(() => {
           localStorage.removeItem('access_token');
@@ -40,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       setIsLoading(false);
     }
-  }, [syncTimezone]);
+  }, [syncTimezone, persistVoicePreference]);
 
   useEffect(() => {
     const handleVisibility = () => {
@@ -62,12 +70,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(response.user);
     localStorage.setItem('access_token', response.access_token);
     syncTimezone();
-  }, [syncTimezone]);
+    persistVoicePreference();
+  }, [syncTimezone, persistVoicePreference]);
 
   const logout = useCallback(() => {
     setUser(null);
     localStorage.removeItem('access_token');
     localStorage.removeItem('chat_history');
+    clearCachedVoiceModel();
   }, []);
 
   const setTokenAndUser = useCallback((token: string, userData: User | null) => {
@@ -75,8 +85,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (userData) {
       setUser(userData);
       syncTimezone();
+      persistVoicePreference();
     }
-  }, [syncTimezone]);
+  }, [syncTimezone, persistVoicePreference]);
 
   return (
     <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, logout, setTokenAndUser }}>
