@@ -18,7 +18,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useOrganization } from '../contexts/OrganizationContext';
 import { changePassword } from '../services/authService';
-import { getVoiceSample, getVoiceModels } from '../services/voiceService';
+import {
+  getVoiceSample,
+  getVoiceModels,
+  getCachedVoiceModel,
+  resolveUserVoiceModel,
+  updateUserVoiceModel,
+} from '../services/voiceService';
 import type { VoiceModel } from '../types';
 
 const container = {
@@ -39,25 +45,42 @@ export function SettingsPage() {
   const navigate = useNavigate();
   const { selectedOrganization } = useOrganization();
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [selectedVoice, setSelectedVoice] = useState('aura-2-thalia-en');
+  const [savedVoice, setSavedVoice] = useState(getCachedVoiceModel);
+  const [pendingVoice, setPendingVoice] = useState(getCachedVoiceModel);
   const [voiceModels, setVoiceModels] = useState<VoiceModel[]>([]);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [playingVoice, setPlayingVoice] = useState<string | null>(null);
   const [isLoadingVoice, setIsLoadingVoice] = useState<string | null>(null);
+  const [isSavingVoice, setIsSavingVoice] = useState(false);
+  const [voiceSaveError, setVoiceSaveError] = useState('');
 
-  // Fetch voice models on component mount
   useEffect(() => {
-    const loadVoiceModels = async () => {
+    let cancelled = false;
+
+    const loadVoicePreference = async () => {
       try {
         const models = await getVoiceModels();
-        setVoiceModels(models);
+        if (!cancelled) setVoiceModels(models);
       } catch (error) {
         console.error('Failed to load voice models:', error);
       }
+
+      try {
+        const model = await resolveUserVoiceModel();
+        if (!cancelled) {
+          setSavedVoice(model);
+          setPendingVoice(model);
+        }
+      } catch (error) {
+        console.error('Failed to load voice settings:', error);
+      }
     };
 
-    loadVoiceModels();
+    loadVoicePreference();
+    return () => {
+      cancelled = true;
+    };
   }, []);
   
   // Password change state
@@ -143,8 +166,52 @@ export function SettingsPage() {
     }
   };
 
+  const stopVoicePreview = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setPlayingVoice(null);
+    setIsLoadingVoice(null);
+  };
+
+  const openVoiceModal = () => {
+    setPendingVoice(savedVoice);
+    setVoiceSaveError('');
+    setShowVoiceModal(true);
+  };
+
+  const closeVoiceModal = () => {
+    if (isSavingVoice) return;
+    stopVoicePreview();
+    setPendingVoice(savedVoice);
+    setVoiceSaveError('');
+    setShowVoiceModal(false);
+  };
+
   const handleSelectVoice = (modelId: string) => {
-    setSelectedVoice(modelId);
+    setPendingVoice(modelId);
+    setVoiceSaveError('');
+  };
+
+  const confirmVoiceSelection = async () => {
+    if (!pendingVoice || pendingVoice === savedVoice || isSavingVoice) return;
+
+    setIsSavingVoice(true);
+    setVoiceSaveError('');
+    stopVoicePreview();
+
+    try {
+      const saved = await updateUserVoiceModel(pendingVoice);
+      setSavedVoice(saved);
+      setPendingVoice(saved);
+      setShowVoiceModal(false);
+    } catch (error) {
+      console.error('Failed to save voice model:', error);
+      setVoiceSaveError('Failed to save voice selection. Please try again.');
+    } finally {
+      setIsSavingVoice(false);
+    }
   };
 
   return (
@@ -212,7 +279,7 @@ export function SettingsPage() {
                 </button>
 
                 <button
-                  onClick={() => setShowVoiceModal(true)}
+                  onClick={openVoiceModal}
                   className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors border-b border-gray-100"
                 >
                   <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
@@ -221,7 +288,7 @@ export function SettingsPage() {
                   <div className="flex-1 text-left">
                     <p className="font-medium text-gray-900">Voice Model</p>
                     <p className="text-sm text-gray-500">
-                      {voiceModels.find(v => v.model === selectedVoice)?.name || 'Select a voice'}
+                      {voiceModels.find(v => v.model === savedVoice)?.name || 'Vesta'}
                     </p>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -375,7 +442,7 @@ export function SettingsPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4"
-            onClick={() => setShowVoiceModal(false)}
+            onClick={closeVoiceModal}
           >
             <motion.div
               initial={{ y: 100, opacity: 0 }}
@@ -386,9 +453,13 @@ export function SettingsPage() {
               className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col shadow-xl overflow-hidden"
             >
               <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">Voice Model</h2>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Assistant Voice</h2>
+                  <p className="text-sm text-gray-500 mt-0.5">Tap a voice to preview, then confirm</p>
+                </div>
                 <button
-                  onClick={() => setShowVoiceModal(false)}
+                  onClick={closeVoiceModal}
+                  disabled={isSavingVoice}
                   className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center"
                 >
                   <X className="w-5 h-5 text-gray-500" />
@@ -401,7 +472,7 @@ export function SettingsPage() {
                     key={voice.model}
                     whileTap={{ scale: 0.98 }}
                     className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
-                      selectedVoice === voice.model
+                      pendingVoice === voice.model
                         ? 'border-[#6F42C1] bg-[#6F42C1]/5'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
@@ -409,16 +480,16 @@ export function SettingsPage() {
                   >
                     <div className="flex items-start gap-3">
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                        selectedVoice === voice.model ? 'bg-[#6F42C1]' : 'bg-gray-100'
+                        pendingVoice === voice.model ? 'bg-[#6F42C1]' : 'bg-gray-100'
                       }`}>
                         <Volume2 className={`w-6 h-6 ${
-                          selectedVoice === voice.model ? 'text-white' : 'text-gray-500'
+                          pendingVoice === voice.model ? 'text-white' : 'text-gray-500'
                         }`} />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-gray-900">{voice.name}</p>
-                          {selectedVoice === voice.model && (
+                          {pendingVoice === voice.model && (
                             <Badge variant="success">Selected</Badge>
                           )}
                         </div>
@@ -458,14 +529,22 @@ export function SettingsPage() {
                 ))}
               </div>
 
-              <div className="sticky bottom-0 bg-white border-t border-gray-100 p-4">
+              <div className="sticky bottom-0 bg-white border-t border-gray-100 p-4 space-y-2">
+                {voiceSaveError && (
+                  <div className="p-3 rounded-xl bg-red-50 text-red-600 text-sm">{voiceSaveError}</div>
+                )}
                 <Button
                   className="w-full"
-                  onClick={() => setShowVoiceModal(false)}
+                  onClick={confirmVoiceSelection}
+                  disabled={!pendingVoice || pendingVoice === savedVoice}
+                  isLoading={isSavingVoice}
                 >
                   <Check className="w-5 h-5 mr-2" />
-                  Done
+                  {isSavingVoice ? 'Saving...' : 'Confirm'}
                 </Button>
+                {pendingVoice === savedVoice && (
+                  <p className="text-center text-sm text-gray-500">This voice is already selected</p>
+                )}
               </div>
             </motion.div>
           </motion.div>
