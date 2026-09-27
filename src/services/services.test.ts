@@ -220,4 +220,52 @@ describe('service layer', () => {
     await expect(voiceService.getVoiceSample('bad')).rejects.toThrow('missing model');
     vi.unstubAllGlobals();
   });
+
+  it('voiceService caches model in localStorage', () => {
+    voiceService.cacheVoiceModel('custom-voice');
+    expect(voiceService.getCachedVoiceModel()).toBe('custom-voice');
+    voiceService.clearCachedVoiceModel();
+    expect(voiceService.getCachedVoiceModel()).toBe(voiceService.DEFAULT_VOICE_MODEL);
+  });
+
+  it('voiceService reads and updates user voice settings', async () => {
+    mockFetchAPI.mockResolvedValueOnce({ voice_model: 'saved-voice' });
+    expect(await voiceService.getUserVoiceSettings()).toBe('saved-voice');
+
+    mockFetchAPI.mockResolvedValueOnce({ voice_model: 'updated-voice' });
+    const saved = await voiceService.updateUserVoiceModel('updated-voice');
+    expect(saved).toBe('updated-voice');
+    expect(voiceService.getCachedVoiceModel()).toBe('updated-voice');
+  });
+
+  it('resolveUserVoiceModel uses saved server voice', async () => {
+    mockFetchAPI.mockResolvedValueOnce({ voice_model: 'server-voice' });
+    const model = await voiceService.resolveUserVoiceModel();
+    expect(model).toBe('server-voice');
+    expect(voiceService.getCachedVoiceModel()).toBe('server-voice');
+  });
+
+  it('resolveUserVoiceModel falls back when settings fail', async () => {
+    voiceService.cacheVoiceModel('cached-fallback');
+    mockFetchAPI.mockRejectedValueOnce(new Error('offline'));
+    const model = await voiceService.resolveUserVoiceModel();
+    expect(model).toBe('cached-fallback');
+  });
+
+  it('resolveUserVoiceModel persists default when none saved', async () => {
+    voiceService.clearCachedVoiceModel();
+    mockFetchAPI.mockResolvedValueOnce({ voice_model: null });
+    mockFetchAPI.mockResolvedValueOnce({ voice_model: voiceService.DEFAULT_VOICE_MODEL });
+    const model = await voiceService.resolveUserVoiceModel();
+    expect(model).toBe(voiceService.DEFAULT_VOICE_MODEL);
+  });
+
+  it('resolveUserVoiceModel uses default cache when persist fails', async () => {
+    voiceService.clearCachedVoiceModel();
+    mockFetchAPI.mockResolvedValueOnce({ voice_model: null });
+    mockFetchAPI.mockRejectedValueOnce(new Error('put failed'));
+    const model = await voiceService.resolveUserVoiceModel();
+    expect(model).toBe(voiceService.DEFAULT_VOICE_MODEL);
+    expect(voiceService.getCachedVoiceModel()).toBe(voiceService.DEFAULT_VOICE_MODEL);
+  });
 });
