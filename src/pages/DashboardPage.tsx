@@ -11,7 +11,8 @@ import {
   ChevronRight,
   Clock,
   Check,
-  MoreVertical
+  MoreVertical,
+  RotateCcw
 } from 'lucide-react';
 import { Badge } from '../components/ui';
 import { CarePlanDetailModal } from '../components/CarePlanDetailModal';
@@ -74,17 +75,21 @@ export function DashboardPage() {
     setSelectedPlanName(undefined);
   }, []);
 
-  const handleCompleteAlert = useCallback(async (alertId: string) => {
+  const handleCompleteAlert = useCallback(async (alertId: string, completed = true) => {
     setProcessingAlertId(alertId);
     setActionMenuId(null);
     try {
       const today = new Date().toISOString().split('T')[0];
-      await completeAlert(alertId, today);
-      setAlerts(prev => prev.map(a => 
-        a.id === alertId ? { ...a, is_completed_today: true, completed_dates: [...a.completed_dates, today] } : a
-      ));
+      await completeAlert(alertId, today, { completed });
+      setAlerts(prev => prev.map(a => {
+        if (a.id !== alertId) return a;
+        const dates = completed
+          ? Array.from(new Set([...(a.completed_dates || []), today]))
+          : (a.completed_dates || []).filter(d => d !== today);
+        return { ...a, is_completed_today: completed, completed_dates: dates };
+      }));
     } catch (error) {
-      console.error('Failed to complete alert:', error);
+      console.error('Failed to update alert:', error);
     } finally {
       setProcessingAlertId(null);
     }
@@ -332,8 +337,7 @@ export function DashboardPage() {
                         )}
                       </p>
                     </div>
-                    {!alert.is_completed_today && (
-                      <div className="relative" ref={actionMenuId === alert.id ? menuRef : null}>
+                    <div className="relative" ref={actionMenuId === alert.id ? menuRef : null}>
                         <button
                           onClick={() => setActionMenuId(actionMenuId === alert.id ? null : alert.id)}
                           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -344,6 +348,15 @@ export function DashboardPage() {
                           <div className={`absolute right-0 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-10 min-w-[160px] ${
                             index >= alerts.length - 3 ? 'bottom-full mb-1' : 'top-full mt-1'
                           }`}>
+                            {alert.is_completed_today ? (
+                            <button
+                              onClick={() => handleCompleteAlert(alert.id, false)}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <RotateCcw className="w-4 h-4 text-gray-600" />
+                              Undo complete
+                            </button>
+                            ) : (
                             <button
                               onClick={() => handleCompleteAlert(alert.id)}
                               className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
@@ -351,6 +364,7 @@ export function DashboardPage() {
                               <Check className="w-4 h-4 text-green-600" />
                               Mark Complete
                             </button>
+                            )}
                             <div className="border-t border-gray-100 my-1" />
                             <button
                               onClick={() => handleSnoozeAlert(alert.id, 15)}
@@ -376,7 +390,6 @@ export function DashboardPage() {
                           </div>
                         )}
                       </div>
-                    )}
                   </div>
                 </div>
               ))}

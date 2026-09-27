@@ -34,7 +34,7 @@ export function VoicePage() {
   const isSpeaking = status === 'speaking';
   const isProcessing = status === 'processing';
   const hasError = status === 'error';
-  const canStart = isReady && !hasError;
+  const canStart = !hasError && !isInConversation;
 
   const handleMicClick = () => {
     if (isInConversation) {
@@ -180,10 +180,10 @@ export function VoicePage() {
             <motion.button
               id="voice-mic-button"
               onClick={handleMicClick}
-              disabled={isConnecting}
-              whileHover={!isConnecting ? { scale: 1.05 } : undefined}
-              whileTap={!isConnecting ? { scale: 0.95 } : undefined}
-              className={`relative z-10 w-36 h-36 md:w-40 md:h-40 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 ${getMicButtonClasses()} ${isConnecting && 'cursor-not-allowed opacity-60'}`}
+              disabled={hasError}
+              whileHover={!hasError ? { scale: 1.05 } : undefined}
+              whileTap={!hasError ? { scale: 0.95 } : undefined}
+              className={`relative z-10 w-36 h-36 md:w-40 md:h-40 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 ${getMicButtonClasses()} ${isConnecting && 'opacity-80'}`}
             >
               {getMicIcon()}
             </motion.button>
