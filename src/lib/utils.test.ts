@@ -17,6 +17,7 @@ describe('shared formatting utilities', () => {
     const date = new Date(2026, 7, 30, 17, 5);
 
     expect(formatTime(date)).toBe('5:05 PM');
+    expect(formatTime('2026-08-30T17:05:00')).toBe('5:05 PM');
   });
 
   it('formats a combined date and time', () => {
