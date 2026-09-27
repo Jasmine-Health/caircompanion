@@ -50,6 +50,8 @@ export function useVoiceChat(): UseVoiceChatReturn {
   const playbackStartTimeRef = useRef(0);
   const scheduledEndTimeRef = useRef(0);
   const pendingAudioEndRef = useRef(false);
+  const pendingStartRef = useRef(false);
+  const startConversationRef = useRef<() => Promise<void>>(async () => {});
 
   // Keep statusRef in sync
   useEffect(() => {
@@ -190,7 +192,11 @@ export function useVoiceChat(): UseVoiceChatReturn {
       };
 
       source.connect(workletNode);
-      workletNode.connect(audioCtx.destination); // needed to keep the worklet alive
+      // Keep the worklet alive without routing mic into the speakers.
+      const silentGain = audioCtx.createGain();
+      silentGain.gain.value = 0;
+      workletNode.connect(silentGain);
+      silentGain.connect(audioCtx.destination);
 
     } catch (err) {
       console.error('[MIC] Failed to start microphone:', err);
@@ -252,6 +258,10 @@ export function useVoiceChat(): UseVoiceChatReturn {
           case 'ready':
             console.log('[WS] Voice assistant ready');
             setStatus('ready');
+            if (pendingStartRef.current && !isConversationActiveRef.current) {
+              pendingStartRef.current = false;
+              void startConversationRef.current();
+            }
             break;
 
           case 'interim_transcript':
@@ -280,6 +290,7 @@ export function useVoiceChat(): UseVoiceChatReturn {
           case 'audio_start':
             // TTS streaming is about to begin
             if (isConversationActiveRef.current) {
+              statusRef.current = 'speaking';
               setStatus('speaking');
               // Reset scheduling timeline for new utterance
               const ctx = getPlaybackContext();
@@ -300,8 +311,9 @@ export function useVoiceChat(): UseVoiceChatReturn {
             break;
 
           case 'speech_started':
-            // Server detected barge-in via VAD
+            // Server confirmed barge-in with a real transcript (not TTS echo).
             if (isConversationActiveRef.current) {
+              statusRef.current = 'listening';
               stopAudioPlayback();
               setStatus('listening');
               setTranscript('');
@@ -342,7 +354,13 @@ export function useVoiceChat(): UseVoiceChatReturn {
           stopMicrophone();
           stopAudioPlayback();
         }
+        wsRef.current = null;
         setStatus('disconnected');
+        window.setTimeout(() => {
+          if (!wsRef.current && !isConversationActiveRef.current) {
+            connectWebSocket();
+          }
+        }, 800);
       }
     };
   }, [enqueueAudio, getPlaybackContext, stopAudioPlayback, stopMicrophone]);
@@ -351,7 +369,10 @@ export function useVoiceChat(): UseVoiceChatReturn {
 
   const startConversation = useCallback(async () => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      setError('Not connected to server');
+      pendingStartRef.current = true;
+      if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
+        connectWebSocket();
+      }
       return;
     }
 
@@ -360,19 +381,19 @@ export function useVoiceChat(): UseVoiceChatReturn {
     setTranscript('');
     setTranscriptSpeaker(null);
 
-    // Start microphone capture
     await startMicrophone();
 
-    // Ensure playback context is ready (must be resumed from user gesture)
     const pCtx = getPlaybackContext();
     if (pCtx.state === 'suspended') {
       await pCtx.resume();
     }
 
-    // Tell backend to start (triggers greeting)
     wsRef.current.send(JSON.stringify({ type: 'StartRecording' }));
-    setStatus('speaking'); // Greeting will play first
-  }, [startMicrophone, getPlaybackContext]);
+    statusRef.current = 'speaking';
+    setStatus('speaking');
+  }, [startMicrophone, getPlaybackContext, connectWebSocket]);
+
+  startConversationRef.current = startConversation;
 
   const stopConversation = useCallback(() => {
     isConversationActiveRef.current = false;
