@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
@@ -8,6 +8,32 @@ export default defineConfig({
   server: {
     // host: true,
     allowedHosts: true,
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    css: false,
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/main.tsx',
+        'src/vite-env.d.ts',
+        'src/App.tsx',
+        'src/pages/**',
+        'src/types/**',
+        'src/components/layout/**',
+        'src/components/ui/index.ts',
+        'src/test/**',
+        '**/*.test.{ts,tsx}',
+      ],
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        statements: 80,
+        branches: 50,
+      },
+    },
   },
   plugins: [
     react(),
