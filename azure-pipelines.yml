@@ -130,3 +130,24 @@ stages:
         namespace: $(aksNamespace)
         command: rollout
         arguments: status deployment/caircompanion --timeout=180s
+
+- stage: PublishProd
+  displayName: Publish PROD manifests
+  dependsOn: Deploy
+  condition: succeeded()
+  jobs:
+  - job: PublishProdManifests
+    displayName: Stamp and publish prod manifests
+    steps:
+    - checkout: self
+
+    - script: |
+        sed -i 's|REPLACE_IMAGE|$(containerRegistry)/$(imageRepository):$(tag)|g' k8s/prod/deployment.yaml
+        grep -q "$(containerRegistry)/$(imageRepository):$(tag)" k8s/prod/deployment.yaml
+      displayName: Replace image name in PROD manifest
+
+    - task: PublishPipelineArtifact@1
+      displayName: Publish PROD manifests
+      inputs:
+        targetPath: k8s/prod
+        artifact: prod-manifests
