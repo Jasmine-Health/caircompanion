@@ -22,6 +22,11 @@ spec:
           ports:
             - name: http
               containerPort: 80
+          env:
+            - name: ENV
+              value: "prod"
+            - name: VITE_API_BASE_URL
+              value: "https://api.cairiqhealth.ai"
           readinessProbe:
             httpGet:
               path: /

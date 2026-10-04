@@ -1,4 +1,18 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+type RuntimeConfig = { VITE_API_BASE_URL?: string };
+
+declare global {
+  interface Window {
+    __APP_CONFIG__?: RuntimeConfig;
+  }
+}
+
+export function getApiBaseUrl(): string {
+  const runtime = typeof window !== 'undefined' ? window.__APP_CONFIG__?.VITE_API_BASE_URL?.trim() : '';
+  if (runtime) return runtime.replace(/\/$/, '');
+  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 export const API_CONFIG = {
   BASE_URL: API_BASE_URL,
