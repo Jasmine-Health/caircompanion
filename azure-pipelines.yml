@@ -6,7 +6,7 @@ pool:
 
 variables:
   nodeVersion: '20.x'
-  VITE_API_BASE_URL: 'https://api.cairiqhealth.ai'
+  VITE_API_BASE_URL: 'https://api.dev.cairiqhealth.ai'
   dockerRegistryServiceConnection: '470f6d78-f0c3-48a3-86bb-16bf34680ebc'
   imageRepository: 'caircompanion'
   containerRegistry: 'cairiqacr.azurecr.io'
@@ -90,8 +90,12 @@ stages:
         printf '%s\n' \
           'FROM cairiqacr.azurecr.io/base/nginx:1.27-alpine' \
           'COPY nginx.conf /etc/nginx/conf.d/default.conf' \
+          'COPY docker/env-config-entrypoint.sh /env-config-entrypoint.sh' \
+          'RUN chmod +x /env-config-entrypoint.sh' \
           'COPY dist /usr/share/nginx/html' \
-          'EXPOSE 80' > Dockerfile
+          'EXPOSE 80' \
+          'ENTRYPOINT ["/env-config-entrypoint.sh"]' \
+          'CMD ["nginx", "-g", "daemon off;"]' > Dockerfile
       displayName: Create production container definition
 
     - task: Docker@2
@@ -130,3 +134,24 @@ stages:
         namespace: $(aksNamespace)
         command: rollout
         arguments: status deployment/caircompanion --timeout=180s
+
+- stage: PublishProd
+  displayName: Publish PROD manifests
+  dependsOn: Deploy
+  condition: succeeded()
+  jobs:
+  - job: PublishProdManifests
+    displayName: Stamp and publish prod manifests
+    steps:
+    - checkout: self
+
+    - script: |
+        sed -i 's|REPLACE_IMAGE|$(containerRegistry)/$(imageRepository):$(tag)|g' k8s/prod/deployment.yaml
+        grep -q "$(containerRegistry)/$(imageRepository):$(tag)" k8s/prod/deployment.yaml
+      displayName: Replace image name in PROD manifest
+
+    - task: PublishPipelineArtifact@1
+      displayName: Publish PROD manifests
+      inputs:
+        targetPath: k8s/prod
+        artifact: prod-manifests

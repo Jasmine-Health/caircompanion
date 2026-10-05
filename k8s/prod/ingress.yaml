@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cairiq-companion-prod
+  namespace: cairiq-prod
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: caircompanion.cairiqhealth.ai
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cairiq-companion-prod
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - caircompanion.cairiqhealth.ai
+      secretName: cairiq-companion-prod-tls

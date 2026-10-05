@@ -1,4 +1,4 @@
-import { API_ENDPOINTS, fetchAPI } from '../config/api';
+import { API_ENDPOINTS, fetchAPI, getApiBaseUrl } from '../config/api';
 import type { VoiceModel } from '../types';
 
 export const DEFAULT_VOICE_MODEL = 'aura-2-vesta-en';
@@ -32,7 +32,7 @@ export async function getVoiceSample(model: string): Promise<Blob> {
   const token = localStorage.getItem('access_token');
   const url = `${API_ENDPOINTS.VOICE_SAMPLE}?${queryParams.toString()}`;
 
-  const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${url}`, {
+  const response = await fetch(`${getApiBaseUrl()}${url}`, {
     headers: {
       Authorization: token ? `Bearer ${token}` : '',
     },
