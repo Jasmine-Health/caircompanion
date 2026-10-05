@@ -6,6 +6,7 @@ import {
   ChevronRight,
   CheckCircle2,
   Check,
+  RotateCcw,
   CalendarClock,
   Moon,
   Pill,
@@ -106,20 +107,22 @@ export function AlertsListPage({
     setSelectedDate(next);
   };
 
-  const handleComplete = async (alertId: string) => {
+  const handleComplete = async (alertId: string, completed = true) => {
     setProcessingId(alertId);
     try {
-      await completeAlert(alertId, dateString);
+      await completeAlert(alertId, dateString, { completed });
       setAlerts((prev) =>
-        prev.map((a) =>
-          a.id === alertId
-            ? { ...a, is_completed_today: true, completed_dates: [...a.completed_dates, dateString] }
-            : a
-        )
+        prev.map((a) => {
+          if (a.id !== alertId) return a;
+          const dates = completed
+            ? Array.from(new Set([...(a.completed_dates || []), dateString]))
+            : (a.completed_dates || []).filter((d) => d !== dateString);
+          return { ...a, is_completed_today: completed, completed_dates: dates };
+        })
       );
-      setSnackbar('Alert marked as complete');
+      setSnackbar(completed ? 'Alert marked as complete' : 'Alert marked incomplete');
     } catch {
-      setSnackbar('Failed to complete alert');
+      setSnackbar(completed ? 'Failed to complete alert' : 'Failed to undo alert');
     } finally {
       setProcessingId(null);
     }
@@ -296,10 +299,19 @@ export function AlertsListPage({
                   </div>
                 </div>
 
-                {!alert.is_completed_today && (
-                  <>
-                    <div className="border-t border-gray-100" />
-                    <div className="flex">
+                <div className="border-t border-gray-100" />
+                <div className="flex">
+                  {alert.is_completed_today ? (
+                    <button
+                      onClick={() => handleComplete(alert.id, false)}
+                      disabled={processingId === alert.id}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      Undo
+                    </button>
+                  ) : (
+                    <>
                       <button
                         onClick={() => handleComplete(alert.id)}
                         disabled={processingId === alert.id}
@@ -317,9 +329,9 @@ export function AlertsListPage({
                         <Moon className="w-4 h-4" />
                         Snooze
                       </button>
-                    </div>
-                  </>
-                )}
+                    </>
+                  )}
+                </div>
               </motion.div>
               );
             })}

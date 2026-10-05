@@ -161,10 +161,24 @@ export async function getAlerts(params: { date?: string; type?: string; is_activ
   });
 }
 
-export async function completeAlert(alertId: string, date: string): Promise<{ status: string; alert_id: string; completed_date: string }> {
-  return fetchAPI<{ status: string; alert_id: string; completed_date: string }>(API_ENDPOINTS.ALERT_COMPLETE(alertId), {
+export async function completeAlert(
+  alertId: string,
+  date: string,
+  opts?: { completed?: boolean; alertIds?: string[] },
+): Promise<{
+  status: string;
+  alert_id: string;
+  completed_date: string;
+  completed?: boolean;
+  alert_ids?: string[];
+}> {
+  return fetchAPI(API_ENDPOINTS.ALERT_COMPLETE(alertId), {
     method: 'POST',
-    body: JSON.stringify({ date }),
+    body: JSON.stringify({
+      date,
+      completed: opts?.completed ?? true,
+      ...(opts?.alertIds?.length ? { alert_ids: opts.alertIds } : {}),
+    }),
   });
 }
 
