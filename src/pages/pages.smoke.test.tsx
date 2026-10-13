@@ -80,6 +80,8 @@ vi.mock('../services/healthDataService', () => ({
     care_plans: [],
   }),
   getAlerts: vi.fn().mockResolvedValue({ patient_id: 'p1', date: '2026-01-01', count: 0, alerts: [] }),
+  getCareSteps: vi.fn().mockResolvedValue([]),
+  completeCareStep: vi.fn(),
   completeAlert: vi.fn(),
   snoozeAlert: vi.fn(),
   getCarePlans: vi.fn().mockResolvedValue({ patient_id: 'p1', count: 0, care_plans: [] }),
@@ -137,6 +139,7 @@ import { VoicePage } from './VoicePage';
 import { ChatPage } from './ChatPage';
 import { DashboardPage } from './DashboardPage';
 import { AlertsPage } from './AlertsPage';
+import { CareStepsPage } from './CareStepsPage';
 import { CarePlanPage } from './CarePlanPage';
 import { MedicationsPage, ExercisePage, MoodPage, DietPage } from './TrackerPages';
 import { HealthDataPage } from './HealthDataPage';
@@ -180,6 +183,7 @@ describe('page smoke tests', () => {
       ['/chat', <ChatPage />, /Message your health companion|Chat/i],
       ['/dashboard', <DashboardPage />, /Dashboard|health/i],
       ['/alerts', <AlertsPage />, /Alerts|No Alerts/i],
+      ['/care-steps', <CareStepsPage />, /Care steps|No care steps/i],
       ['/care-plan', <CarePlanPage />, /Care Plans|No care plans/i],
       ['/medications', <MedicationsPage />, /Medications/i],
       ['/exercise', <ExercisePage />, /Exercise/i],

@@ -6,6 +6,7 @@ import {
   Brain,
   MessageSquare,
   HeartPulse,
+  ListChecks,
   CalendarClock,
   Dumbbell,
   Smile,
@@ -25,6 +26,7 @@ export type AppDestination =
   | 'dashboard'
   | 'health-data'
   | 'alerts'
+  | 'care-steps'
   | 'appointments'
   | 'medications'
   | 'exercise'
@@ -51,6 +53,7 @@ export const drawerMenuItems: MenuItem[] = [
   { name: 'Health Data', icon: HeartPulse, destination: 'health-data', path: '/health-data' },
   { name: 'Health Trackers', icon: Activity, destination: 'trackers', path: '/trackers' },
   { name: 'Alerts', icon: Bell, destination: 'alerts', path: '/alerts' },
+  { name: 'Care steps', icon: ListChecks, destination: 'care-steps', path: '/care-steps' },
   { name: 'Appointments', icon: CalendarClock, destination: 'appointments', path: '/appointments' },
   { name: 'Medications', icon: Pill, destination: 'medications', path: '/medications' },
   { name: 'Exercise', icon: Dumbbell, destination: 'exercise', path: '/exercise' },
@@ -77,6 +80,7 @@ export const pageTitles: Record<string, string> = {
   '/dashboard': 'Dashboard',
   '/health-data': 'Health Data',
   '/alerts': 'Alerts',
+  '/care-steps': 'Care steps',
   '/appointments': 'Appointments',
   '/medications': 'Medications',
   '/exercise': 'Exercise',

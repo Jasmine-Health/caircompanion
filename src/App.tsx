@@ -12,6 +12,7 @@ import { VoicePage } from './pages/VoicePage';
 import { ChatPage } from './pages/ChatPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { AlertsPage, AppointmentsPage } from './pages/AlertsPage';
+import { CareStepsPage } from './pages/CareStepsPage';
 import { MedicationsPage, ExercisePage, MoodPage, DietPage } from './pages/TrackerPages';
 import { CarePlanPage } from './pages/CarePlanPage';
 import { HealthDataPage } from './pages/HealthDataPage';
@@ -99,6 +100,7 @@ function App() {
 
               {/* iOS bottom tab screens */}
               <Route path="alerts" element={<AlertsPage />} />
+              <Route path="care-steps" element={<CareStepsPage />} />
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="medications" element={<MedicationsPage />} />
               <Route path="care-plan" element={<CarePlanPage />} />

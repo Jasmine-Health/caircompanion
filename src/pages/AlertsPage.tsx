@@ -22,10 +22,7 @@ import {
   getAlerts,
   completeAlert,
   snoozeAlert,
-  getCareSteps,
-  completeCareStep,
   type Alert,
-  type CareStep,
 } from '../services/healthDataService';
 import { formatDate } from '../lib/utils';
 
@@ -60,25 +57,6 @@ interface AlertsListPageProps {
   excludeAppointments?: boolean;
 }
 
-const stepStatusLabel: Record<string, string> = {
-  pending: 'To do',
-  in_progress: 'In progress',
-  followed_through: 'Done',
-  overdue: 'Overdue',
-  escalated: 'With the nurse',
-  skipped_by_clinician: 'Skipped',
-};
-
-function stepDue(value?: string | null): string {
-  if (!value) return '';
-  const day = value.slice(0, 10);
-  return /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : value;
-}
-
-function stepIsOpen(status: string): boolean {
-  return status !== 'followed_through' && status !== 'skipped_by_clinician';
-}
-
 export function AlertsListPage({
   title,
   subtitle,
@@ -86,9 +64,6 @@ export function AlertsListPage({
   excludeAppointments = false,
 }: AlertsListPageProps) {
   const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [steps, setSteps] = useState<CareStep[]>([]);
-  const [stepBusy, setStepBusy] = useState<string | null>(null);
-  const [stepError, setStepError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
@@ -118,10 +93,7 @@ export function AlertsListPage({
 
   useEffect(() => {
     loadAlerts();
-    if (!alertType) {
-      getCareSteps().then(setSteps).catch(() => setSteps([]));
-    }
-  }, [loadAlerts, alertType]);
+  }, [loadAlerts]);
 
   const filteredAlerts = alerts.filter((alert) => {
     if (excludeAppointments && alert.type === 'appointment') return false;
@@ -195,8 +167,8 @@ export function AlertsListPage({
         icon: Bell,
         iconClassName: 'text-gray-400',
         iconBgClassName: 'bg-gray-100',
-        title: 'No reminders',
-        message: 'No reminders for this date',
+        title: 'No Alerts',
+        message: 'No alerts found for this date. Try selecting a different date.',
       };
   const EmptyIcon = emptyState.icon;
 
@@ -207,57 +179,6 @@ export function AlertsListPage({
           <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
           <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
         </div>
-
-        {!alertType && (
-          <div className="bg-white rounded-xl border border-gray-100 p-4 mb-4 space-y-3">
-            <div>
-              <p className="text-sm font-semibold text-gray-900">Care steps</p>
-              <p className="text-xs text-gray-500 mt-1">These are the tasks your care team tracks. Marking one done updates that record.</p>
-            </div>
-            {steps.length === 0 ? (
-              <p className="text-sm text-gray-500">No care steps are assigned yet.</p>
-            ) : steps.map(step => {
-              const stepKey = step.state_id || step.step_id;
-              const open = stepIsOpen(step.status);
-              const due = stepDue(step.due_date);
-              return (
-                <div key={stepKey || step.label} className="flex items-center justify-between gap-3 border-t border-gray-50 pt-3 text-sm">
-                  <div>
-                    <p className={open ? 'text-gray-900' : 'text-gray-400'}>{step.label}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {[due, stepStatusLabel[step.status] || step.status].filter(Boolean).join(' · ')}
-                    </p>
-                  </div>
-                  {open && stepKey && (
-                    <button
-                      type="button"
-                      disabled={stepBusy === stepKey}
-                      className="text-xs font-semibold text-indigo-600 disabled:opacity-50"
-                      onClick={() => {
-                        setStepBusy(stepKey);
-                        setStepError(null);
-                        completeCareStep(stepKey)
-                          .then(() => getCareSteps().then(setSteps))
-                          .catch(() => setStepError('Could not update that step. It stays as it was.'))
-                          .finally(() => setStepBusy(null));
-                      }}
-                    >
-                      {stepBusy === stepKey ? 'Saving' : 'Done'}
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-            {stepError && <p className="text-xs text-red-600">{stepError}</p>}
-          </div>
-        )}
-
-        {!alertType && (
-          <div className="mb-2">
-            <p className="text-sm font-semibold text-gray-900">Reminders</p>
-            <p className="text-xs text-gray-500 mt-1">These are reminders. Marking one done does not change the care steps above, unless that reminder is tied to a care step.</p>
-          </div>
-        )}
 
         <div className="flex items-center justify-between bg-white rounded-xl p-3 mb-4 border border-gray-100">
           <button onClick={() => changeDate(-1)} className="p-2 hover:bg-gray-100 rounded-lg">

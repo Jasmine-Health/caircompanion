@@ -16,6 +16,7 @@ describe('navigation config', () => {
 
   it('resolves page titles for known and tracker paths', () => {
     expect(getPageTitle('/alerts')).toBe('Alerts');
+    expect(getPageTitle('/care-steps')).toBe('Care steps');
     expect(getPageTitle('/trackers/vitals')).toBe('Vitals');
     expect(getPageTitle('/trackers/unknown')).toBe('Trackers');
     expect(getPageTitle('/unknown')).toBe('CairCompanion');

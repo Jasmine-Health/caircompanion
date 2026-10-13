@@ -167,6 +167,7 @@ export interface CareStep {
   state_id?: string | null;
   status: string;
   due_date?: string | null;
+  pathway_name?: string | null;
 }
 
 export async function getCareSteps(): Promise<CareStep[]> {
