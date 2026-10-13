@@ -168,7 +168,7 @@ export function AlertsListPage({
         iconClassName: 'text-gray-400',
         iconBgClassName: 'bg-gray-100',
         title: 'No Alerts',
-        message: 'No alerts for this date',
+        message: 'No alerts found for this date. Try selecting a different date.',
       };
   const EmptyIcon = emptyState.icon;
 
