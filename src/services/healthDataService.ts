@@ -161,6 +161,23 @@ export async function getAlerts(params: { date?: string; type?: string; is_activ
   });
 }
 
+export interface CareStep {
+  label: string;
+  step_id: string;
+  state_id?: string | null;
+  status: string;
+  due_date?: string | null;
+}
+
+export async function getCareSteps(): Promise<CareStep[]> {
+  const data = await fetchAPI<{ steps?: CareStep[] }>(API_ENDPOINTS.STEPS_V2);
+  return data.steps || [];
+}
+
+export async function completeCareStep(stepId: string): Promise<void> {
+  await fetchAPI(API_ENDPOINTS.STEP_COMPLETE(stepId), { method: 'POST' });
+}
+
 export async function completeAlert(
   alertId: string,
   date: string,
