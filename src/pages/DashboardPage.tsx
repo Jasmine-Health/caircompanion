@@ -5,6 +5,8 @@ import {
   Activity, 
   Droplets, 
   Scale, 
+  Footprints,
+  Moon,
   Pill, 
   AlertCircle,
   CheckCircle2,
@@ -18,12 +20,15 @@ import { Badge } from '../components/ui';
 import { CarePlanDetailModal } from '../components/CarePlanDetailModal';
 import { getDailySummary, getAlerts, completeAlert, snoozeAlert, type DailySummary, type Alert } from '../services/healthDataService';
 import { Link } from 'react-router-dom';
+import { watchVisible } from '../lib/visibleRefresh';
 
 const vitalIcons: Record<string, React.ReactNode> = {
   'Blood Pressure': <Heart className="w-5 h-5 text-red-500" />,
   'Heart Rate': <Activity className="w-5 h-5 text-pink-500" />,
   'Blood Glucose': <Droplets className="w-5 h-5 text-blue-500" />,
   'Weight': <Scale className="w-5 h-5 text-green-500" />,
+  'Steps': <Footprints className="w-5 h-5 text-indigo-500" />,
+  'Sleep': <Moon className="w-5 h-5 text-violet-500" />,
 };
 
 const container = {
@@ -128,6 +133,7 @@ export function DashboardPage() {
     };
 
     loadData();
+    return watchVisible(() => { loadData(); });
   }, []);
 
   const pendingAlerts = alerts.filter(a => !a.is_completed_today);
@@ -207,15 +213,19 @@ export function DashboardPage() {
               </Link>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {Object.entries(summary?.recent_vitals || {}).map(([name, vital]) => (
+              {[
+                ...Object.entries(summary?.recent_vitals || {}).filter(([name]) => name !== 'Steps' && name !== 'Sleep'),
+                ['Steps', summary?.recent_vitals?.Steps] as const,
+                ['Sleep', summary?.recent_vitals?.Sleep] as const,
+              ].map(([name, vital]) => (
                 <div key={name} className="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
                   <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center mb-3">
                     {vitalIcons[name] || <Activity className="w-5 h-5 text-gray-500" />}
                   </div>
                   <p className="text-xs text-gray-500 font-medium">{name}</p>
                   <p className="text-xl font-bold text-gray-900 mt-1">
-                    {vital.value_string}
-                    <span className="text-sm font-normal text-gray-400 ml-1">{vital.unit}</span>
+                    {vital?.value_string || 'NA'}
+                    {vital?.unit ? <span className="text-sm font-normal text-gray-400 ml-1">{vital.unit}</span> : null}
                   </p>
                 </div>
               ))}

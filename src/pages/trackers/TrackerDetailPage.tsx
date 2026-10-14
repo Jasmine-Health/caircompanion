@@ -15,6 +15,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui';
+import { watchVisible } from '../../lib/visibleRefresh';
 import { 
   getVitals,
   getMedications,
@@ -255,6 +256,7 @@ export function TrackerDetailPage() {
     };
 
     loadData();
+    return watchVisible(() => { loadData(); });
   }, [trackerId, selectedFilter, customStartDate, customEndDate]);
 
   if (!config) {
