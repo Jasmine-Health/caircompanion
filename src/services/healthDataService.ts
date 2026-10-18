@@ -179,6 +179,60 @@ export async function completeCareStep(stepId: string): Promise<void> {
   await fetchAPI(API_ENDPOINTS.STEP_COMPLETE(stepId), { method: 'POST' });
 }
 
+export interface PhysicianInstruction {
+  id: string;
+  message: string;
+  from: string;
+  priority: string;
+  date: string;
+  status: string;
+}
+
+export interface NurseQuestion {
+  id: string;
+  conversation_id: string;
+  message: string;
+  date: string;
+  replied: boolean;
+  reply_text: string | null;
+  reply_date: string | null;
+}
+
+export interface CaregiverNotification {
+  id: string;
+  message: string;
+  status: string;
+  date: string;
+}
+
+export interface CareTeamNotes {
+  patient_id: string;
+  physician_instructions: PhysicianInstruction[];
+  nurse_questions: NurseQuestion[];
+  caregiver_notifications: CaregiverNotification[];
+}
+
+export async function getCareTeamNotes(patientEmail?: string): Promise<CareTeamNotes> {
+  const headers: Record<string, string> = {};
+  if (patientEmail) {
+    headers['X-Patient-Email'] = patientEmail;
+  }
+
+  return fetchAPI<CareTeamNotes>(API_ENDPOINTS.CARE_TEAM_NOTES, { headers });
+}
+
+/**
+ * Reply once to a nurse's question. Routed through the normal chat endpoint
+ * with the question's nq_ conversation_id so CairIQ Map attaches the reply to
+ * the originating nurse handoff.
+ */
+export async function replyToNurseQuestion(conversationId: string, message: string): Promise<void> {
+  await fetchAPI(API_ENDPOINTS.CHAT, {
+    method: 'POST',
+    body: JSON.stringify({ message, conversation_id: conversationId }),
+  });
+}
+
 export async function completeAlert(
   alertId: string,
   date: string,
