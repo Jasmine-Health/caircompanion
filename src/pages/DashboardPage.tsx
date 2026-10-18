@@ -14,11 +14,13 @@ import {
   Clock,
   Check,
   MoreVertical,
-  RotateCcw
+  RotateCcw,
+  Stethoscope,
+  MessageSquareText
 } from 'lucide-react';
 import { Badge } from '../components/ui';
 import { CarePlanDetailModal } from '../components/CarePlanDetailModal';
-import { getDailySummary, getAlerts, completeAlert, snoozeAlert, type DailySummary, type Alert } from '../services/healthDataService';
+import { getDailySummary, getAlerts, completeAlert, snoozeAlert, getCareTeamNotes, type DailySummary, type Alert, type CareTeamNotes } from '../services/healthDataService';
 import { Link } from 'react-router-dom';
 import { watchVisible } from '../lib/visibleRefresh';
 
@@ -47,6 +49,7 @@ const item = {
 export function DashboardPage() {
   const [summary, setSummary] = useState<DailySummary | null>(null);
   const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [careNotes, setCareNotes] = useState<CareTeamNotes | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [selectedPlanName, setSelectedPlanName] = useState<string | undefined>(undefined);
@@ -119,12 +122,14 @@ export function DashboardPage() {
     const loadData = async () => {
       try {
         const today = new Date().toISOString().split('T')[0];
-        const [summaryData, alertsData] = await Promise.all([
+        const [summaryData, alertsData, careNotesData] = await Promise.all([
           getDailySummary(today),
           getAlerts({ date: today, is_active: true }),
+          getCareTeamNotes().catch(() => null),
         ]);
         setSummary(summaryData);
         setAlerts(alertsData.alerts);
+        setCareNotes(careNotesData);
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
       } finally {
@@ -138,6 +143,28 @@ export function DashboardPage() {
 
   const pendingAlerts = alerts.filter(a => !a.is_completed_today);
   const completedAlerts = alerts.filter(a => a.is_completed_today);
+
+  // Latest care-team notes (physician instructions + nurse questions), newest
+  // first, for the dashboard summary card. Caregiver notifications are shown
+  // on CairGiver, not here.
+  const recentCareNotes = [
+    ...(careNotes?.physician_instructions || []).map((n) => ({
+      key: `pi_${n.id}`,
+      kind: 'instruction' as const,
+      message: n.message,
+      date: n.date,
+      needsReply: false,
+    })),
+    ...(careNotes?.nurse_questions || []).map((n) => ({
+      key: `nq_${n.id}`,
+      kind: 'question' as const,
+      message: n.message,
+      date: n.date,
+      needsReply: !n.replied,
+    })),
+  ]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 3);
 
   if (isLoading) {
     return (
@@ -186,6 +213,49 @@ export function DashboardPage() {
               </div>
             </div>
           </motion.div>
+
+          {/* Care Team Notes */}
+          {recentCareNotes.length > 0 && (
+            <motion.div variants={item}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold text-gray-900 text-lg">Care Team Notes</h2>
+                <Link to="/care-notes" className="text-sm text-[#6F42C1] font-medium flex items-center hover:underline">
+                  View All <ChevronRight className="w-4 h-4" />
+                </Link>
+              </div>
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                {recentCareNotes.map((note, index) => (
+                  <Link
+                    key={note.key}
+                    to="/care-notes"
+                    className={`flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors ${
+                      index < recentCareNotes.length - 1 ? 'border-b border-gray-100' : ''
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                      note.kind === 'question' ? 'bg-[#6F42C1]/10' : 'bg-indigo-100'
+                    }`}>
+                      {note.kind === 'question'
+                        ? <MessageSquareText className="w-5 h-5 text-[#6F42C1]" />
+                        : <Stethoscope className="w-5 h-5 text-indigo-600" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{note.message}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {note.kind === 'question' ? 'Question from your care team' : 'From your care team'}
+                      </p>
+                    </div>
+                    {note.needsReply && (
+                      <span className="flex-shrink-0 text-[11px] font-medium px-2 py-1 rounded-md bg-amber-50 text-amber-700">
+                        Reply
+                      </span>
+                    )}
+                    <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  </Link>
+                ))}
+              </div>
+            </motion.div>
+          )}
 
           {/* Medical Conditions */}
           <motion.div variants={item}>

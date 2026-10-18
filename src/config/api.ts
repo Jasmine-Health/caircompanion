@@ -46,6 +46,8 @@ export const API_ENDPOINTS = {
   
   // Health Data
   SUMMARY: '/summary',
+  CARE_TEAM_NOTES: '/care-team-notes',
+  CHAT: '/chat',
   ALERTS_V2: '/alerts_v2',
   STEPS_V2: '/steps_v2',
   STEP_COMPLETE: (stepId: string) => `/steps_v2/${encodeURIComponent(stepId)}/complete`,
