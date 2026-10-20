@@ -74,13 +74,55 @@ export interface CarePlan {
   plan_type: string;
 }
 
+export interface CarePlanStep {
+  step_id: string;
+  label: string | null;
+  type: string | null;
+  priority: string | null;
+  description: string | null;
+  due_rule: string | null;
+  order_index: number | null;
+  status: string | null;
+  due_date: string | null;
+  followed_through_at: string | null;
+}
+
+export interface CarePlanPatientContext {
+  medications: Array<{
+    name: string;
+    dosage: string | null;
+    frequency: string | null;
+    timing: string | null;
+    instructions: string | null;
+  }>;
+  conditions: Array<{ title: string; code: string | null }>;
+  allergies: string[];
+  monitoring: Array<{
+    name: string;
+    value_string: string | null;
+    unit: string | null;
+    effective_date: string | null;
+  }>;
+}
+
 export interface CarePlanDetail extends CarePlan {
+  domain?: string | null;
+  version?: string | null;
+  start_anchor?: string | null;
+  source?: string | null;
+  active_window_days?: number | null;
+  // ExecutionPathway plans return structured steps (the real content for most
+  // patients, e.g. Thomas); CarePathway plans return activities/instructions.
+  steps?: CarePlanStep[];
   activities: any[];
   instructions: Array<{
     section_type: string;
     title: string;
     content: string;
   }>;
+  // Patient clinical context attached by the backend so the plan reads as a
+  // real care plan even when the pathway body is thin.
+  patient_context?: CarePlanPatientContext;
 }
 
 export interface TrackerObservation {

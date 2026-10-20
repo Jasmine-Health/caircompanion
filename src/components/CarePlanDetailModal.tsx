@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, FileText, Activity, Loader2 } from 'lucide-react';
+import { X, FileText, Activity, Loader2, CheckCircle2, ListChecks, Pill, Stethoscope, AlertTriangle, HeartPulse } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { getCarePlanDetail, type CarePlanDetail } from '../services/healthDataService';
 import { Badge } from './ui';
@@ -9,6 +9,23 @@ interface CarePlanDetailModalProps {
   onClose: () => void;
   planId: string | null;
   planName?: string;
+}
+
+/** "Oct 18, 2026" — a real date, not a raw ISO string. */
+function formatStepDate(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function prettyStatus(status: string | null): string {
+  if (!status) return '';
+  return status.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase());
+}
+
+function stepBadgeVariant(status: string | null): 'success' | 'default' {
+  return status === 'followed_through' || status === 'completed' ? 'success' : 'default';
 }
 
 export function CarePlanDetailModal({ isOpen, onClose, planId, planName }: CarePlanDetailModalProps) {
@@ -125,6 +142,61 @@ export function CarePlanDetailModal({ isOpen, onClose, planId, planName }: CareP
                     </div>
                   )}
 
+                  {/* Steps (ExecutionPathway — the main content for most patients) */}
+                  {carePlan.steps && carePlan.steps.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <ListChecks className="w-4 h-4 text-[#6F42C1]" />
+                        Care Plan Steps ({carePlan.steps.length})
+                      </h4>
+                      <div className="space-y-3">
+                        {carePlan.steps.map((step, index) => (
+                          <div
+                            key={step.step_id || index}
+                            className="bg-gray-50 rounded-2xl p-4 border border-gray-100"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0 flex-1">
+                                <h5 className="font-semibold text-gray-900 text-sm">
+                                  {step.label || `Step ${index + 1}`}
+                                </h5>
+                                {step.description && (
+                                  <p className="text-gray-600 text-sm mt-1 leading-relaxed whitespace-pre-wrap">
+                                    {step.description}
+                                  </p>
+                                )}
+                                <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-gray-500">
+                                  {step.type && (
+                                    <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-full">
+                                      {step.type}
+                                    </span>
+                                  )}
+                                  {step.priority && (
+                                    <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-full">
+                                      Priority: {step.priority}
+                                    </span>
+                                  )}
+                                  {step.due_date && <span>Due {formatStepDate(step.due_date)}</span>}
+                                  {step.followed_through_at && (
+                                    <span className="text-green-600 inline-flex items-center gap-1">
+                                      <CheckCircle2 className="w-3.5 h-3.5" />
+                                      Done {formatStepDate(step.followed_through_at)}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              {step.status && (
+                                <Badge variant={stepBadgeVariant(step.status)}>
+                                  {prettyStatus(step.status)}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Instructions */}
                   {carePlan.instructions && carePlan.instructions.length > 0 && (
                     <div>
@@ -174,10 +246,95 @@ export function CarePlanDetailModal({ isOpen, onClose, planId, planName }: CareP
                     </div>
                   )}
 
-                  {/* Empty state for no instructions/activities */}
-                  {(!carePlan.instructions || carePlan.instructions.length === 0) &&
+                  {/* Clinical context — real patient data so the plan reads as a
+                      proper care plan even when the pathway body is thin. */}
+                  {carePlan.patient_context && (
+                    <>
+                      {carePlan.patient_context.medications.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <Pill className="w-4 h-4 text-[#6F42C1]" /> Medications
+                          </h4>
+                          <div className="space-y-2">
+                            {carePlan.patient_context.medications.map((med, i) => (
+                              <div key={`${med.name}-${i}`} className="flex items-start justify-between gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium text-gray-900">{med.name}</p>
+                                  {(med.timing || med.instructions) && (
+                                    <p className="text-xs text-gray-500 mt-0.5">{[med.timing, med.instructions].filter(Boolean).join(' · ')}</p>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-600 text-right whitespace-nowrap">
+                                  {[med.dosage, med.frequency].filter(Boolean).join(' · ')}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {carePlan.patient_context.monitoring.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <HeartPulse className="w-4 h-4 text-[#6F42C1]" /> What we're monitoring
+                          </h4>
+                          <div className="grid grid-cols-2 gap-2">
+                            {carePlan.patient_context.monitoring.map((vit, i) => (
+                              <div key={`${vit.name}-${i}`} className="p-3 rounded-xl bg-gray-50 border border-gray-100">
+                                <p className="text-xs text-gray-500">{vit.name}</p>
+                                <p className="text-sm font-semibold text-gray-900">
+                                  {vit.value_string || '—'}
+                                </p>
+                                {vit.effective_date && (
+                                  <p className="text-[11px] text-gray-400 mt-0.5">Last: {formatStepDate(vit.effective_date)}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {carePlan.patient_context.conditions.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                            <Stethoscope className="w-4 h-4 text-[#6F42C1]" /> Conditions
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {carePlan.patient_context.conditions.map((c, i) => (
+                              <span key={`${c.title}-${i}`} className="text-xs font-medium text-gray-700 bg-[#6F42C1]/10 px-3 py-1 rounded-full">
+                                {c.title}{c.code ? ` (${c.code})` : ''}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {carePlan.patient_context.allergies.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 text-amber-500" /> Allergies &amp; precautions
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {carePlan.patient_context.allergies.map((a, i) => (
+                              <span key={`${a}-${i}`} className="text-xs font-medium text-amber-800 bg-amber-100 px-3 py-1 rounded-full">{a}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* Empty state — only when neither the plan body nor any
+                      clinical context is available. */}
+                  {(!carePlan.steps || carePlan.steps.length === 0) &&
+                    (!carePlan.instructions || carePlan.instructions.length === 0) &&
                     (!carePlan.activities || carePlan.activities.length === 0) &&
-                    !carePlan.description && (
+                    !carePlan.description &&
+                    (!carePlan.patient_context ||
+                      (carePlan.patient_context.medications.length === 0 &&
+                        carePlan.patient_context.monitoring.length === 0 &&
+                        carePlan.patient_context.conditions.length === 0 &&
+                        carePlan.patient_context.allergies.length === 0)) && (
                       <div className="text-center py-8">
                         <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
                           <FileText className="w-6 h-6 text-gray-400" />

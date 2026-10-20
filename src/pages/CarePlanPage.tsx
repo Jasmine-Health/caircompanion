@@ -1,19 +1,23 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, ChevronRight, Eye } from 'lucide-react';
-import { getCarePlans, type CarePlan } from '../services/healthDataService';
+import { Heart, ChevronRight, Eye, Pill, Stethoscope, AlertTriangle } from 'lucide-react';
+import { getCarePlans, getDailySummary, type CarePlan, type DailySummary } from '../services/healthDataService';
 import { CarePlanDetailModal } from '../components/CarePlanDetailModal';
 import { Badge } from '../components/ui';
 
 export function CarePlanPage() {
   const [carePlans, setCarePlans] = useState<CarePlan[]>([]);
+  const [profile, setProfile] = useState<DailySummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [selectedPlanName, setSelectedPlanName] = useState<string | undefined>();
 
   useEffect(() => {
-    getCarePlans()
-      .then((data) => setCarePlans(data.care_plans))
+    const today = new Date().toISOString().slice(0, 10);
+    Promise.all([
+      getCarePlans().then((data) => setCarePlans(data.care_plans)),
+      getDailySummary(today).then(setProfile).catch(() => setProfile(null)),
+    ])
       .catch((err) => console.error('Failed to load care plans:', err))
       .finally(() => setIsLoading(false));
   }, []);
@@ -33,6 +37,60 @@ export function CarePlanPage() {
           <h1 className="text-2xl font-bold text-gray-900">Care Plans</h1>
           <p className="text-sm text-gray-500 mt-1">View your active care plans and instructions</p>
         </div>
+
+        {/* Medications, conditions & allergies — the clinical context for the plans */}
+        {profile && (profile.medications?.length > 0 || profile.conditions?.length > 0 || profile.allergies?.length > 0) && (
+          <div className="mb-6 bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-4">
+            {profile.medications?.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                  <Pill className="w-4 h-4 text-[#6F42C1]" /> Medications
+                </h3>
+                <div className="space-y-2">
+                  {profile.medications.map((med, i) => (
+                    <div key={`${med.name}-${i}`} className="flex items-start justify-between gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-900">{med.name}</p>
+                        {(med.timing || med.instructions) && (
+                          <p className="text-xs text-gray-500 mt-0.5">{[med.timing, med.instructions].filter(Boolean).join(' · ')}</p>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-600 text-right whitespace-nowrap">
+                        {[med.dosage, med.frequency].filter(Boolean).join(' · ')}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {profile.conditions?.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                  <Stethoscope className="w-4 h-4 text-[#6F42C1]" /> Conditions
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {profile.conditions.map((c, i) => (
+                    <span key={`${c}-${i}`} className="text-xs font-medium text-gray-700 bg-[#6F42C1]/10 px-3 py-1 rounded-full">{c}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {profile.allergies?.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-500" /> Allergies
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {profile.allergies.map((a, i) => (
+                    <span key={`${a}-${i}`} className="text-xs font-medium text-amber-800 bg-amber-100 px-3 py-1 rounded-full">{a}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {carePlans.length === 0 ? (
           <div className="text-center py-16">
