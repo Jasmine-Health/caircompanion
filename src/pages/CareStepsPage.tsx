@@ -68,7 +68,6 @@ export function CareStepsPage() {
   const [snackbar, setSnackbar] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const selectedKey = dateKey(selectedDate);
   const todayKey = dateKey(new Date());
 
   const load = () => {
@@ -121,13 +120,16 @@ export function CareStepsPage() {
     setSelectedDate(next);
   };
 
+  // Date-wise filtering is deferred for now: show every care step (open and
+  // completed), with the actionable (incomplete) ones first, newest first.
   const visible = steps
-    .filter((step) => {
-      const due = stepDue(step.due_date);
-      if (due === selectedKey) return true;
-      return selectedKey === todayKey && stepIsOpen(step) && due !== '' && due <= todayKey;
-    })
-    .sort((a, b) => stepDue(a.due_date).localeCompare(stepDue(b.due_date)));
+    .slice()
+    .sort((a, b) => {
+      const aOpen = stepIsOpen(a) ? 0 : 1;
+      const bOpen = stepIsOpen(b) ? 0 : 1;
+      if (aOpen !== bOpen) return aOpen - bOpen;
+      return stepDue(b.due_date).localeCompare(stepDue(a.due_date));
+    });
 
   return (
     <div className="min-h-full bg-gray-50">
@@ -162,7 +164,7 @@ export function CareStepsPage() {
             </div>
             <p className="text-lg font-semibold text-gray-900 mb-2">No care steps</p>
             <p className="text-sm text-gray-500 max-w-xs mx-auto">
-              No care steps for this date. Try selecting a different date.
+              You don't have any care steps yet.
             </p>
           </div>
         ) : (

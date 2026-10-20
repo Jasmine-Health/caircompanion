@@ -32,15 +32,16 @@ export function CarePlanPage() {
 
   return (
     <div className="min-h-full bg-gray-50">
-      <div className="px-4 py-4 md:px-6 md:py-6 max-w-2xl mx-auto">
+      <div className="px-4 py-4 md:px-6 md:py-6 max-w-2xl mx-auto flex flex-col">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Care Plans</h1>
           <p className="text-sm text-gray-500 mt-1">View your active care plans and instructions</p>
         </div>
 
-        {/* Medications, conditions & allergies — the clinical context for the plans */}
+        {/* Medications, conditions & allergies — the clinical context. Rendered
+            BELOW the care-plan cards (order-last) so the actual plan leads. */}
         {profile && (profile.medications?.length > 0 || profile.conditions?.length > 0 || profile.allergies?.length > 0) && (
-          <div className="mb-6 bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-4">
+          <div className="order-last mt-6 bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-4">
             {profile.medications?.length > 0 && (
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
