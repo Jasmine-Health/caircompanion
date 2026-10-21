@@ -237,6 +237,7 @@ export interface NurseQuestion {
   date: string;
   replied: boolean;
   reply_text: string | null;
+  care_team_response: string | null;
   reply_date: string | null;
 }
 
@@ -268,8 +269,11 @@ export async function getCareTeamNotes(patientEmail?: string): Promise<CareTeamN
  * with the question's nq_ conversation_id so CairIQ Map attaches the reply to
  * the originating nurse handoff.
  */
-export async function replyToNurseQuestion(conversationId: string, message: string): Promise<void> {
-  await fetchAPI(API_ENDPOINTS.CHAT, {
+export async function replyToNurseQuestion(
+  conversationId: string,
+  message: string,
+): Promise<{ response?: string }> {
+  return fetchAPI<{ response?: string }>(API_ENDPOINTS.CHAT, {
     method: 'POST',
     body: JSON.stringify({ message, conversation_id: conversationId }),
   });

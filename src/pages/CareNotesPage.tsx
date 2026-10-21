@@ -60,14 +60,21 @@ export function CareNotesPage() {
     if (!text) return;
     setReplying(question.id);
     try {
-      await replyToNurseQuestion(question.conversation_id, text);
+      const result = await replyToNurseQuestion(question.conversation_id, text);
+      const careTeamResponse = result?.response?.trim() || null;
       setNotes((prev) =>
         prev
           ? {
               ...prev,
               nurse_questions: prev.nurse_questions.map((q) =>
                 q.id === question.id
-                  ? { ...q, replied: true, reply_text: text, reply_date: new Date().toISOString() }
+                  ? {
+                      ...q,
+                      replied: true,
+                      reply_text: text,
+                      care_team_response: careTeamResponse,
+                      reply_date: new Date().toISOString(),
+                    }
                   : q
               ),
             }
@@ -143,12 +150,23 @@ export function CareNotesPage() {
                       </div>
 
                       {q.replied ? (
-                        <div className="mt-3 rounded-lg bg-gray-50 border border-gray-100 p-3">
-                          <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 mb-1">
-                            <Check className="w-3.5 h-3.5" />
-                            You replied
+                        <div className="mt-3 space-y-2">
+                          <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                            <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 mb-1">
+                              <Check className="w-3.5 h-3.5" />
+                              You replied
+                            </div>
+                            {q.reply_text && <p className="text-sm text-gray-600">{q.reply_text}</p>}
                           </div>
-                          {q.reply_text && <p className="text-sm text-gray-600">{q.reply_text}</p>}
+                          {q.care_team_response && (
+                            <div className="rounded-lg bg-[#6F42C1]/5 border border-[#6F42C1]/15 p-3">
+                              <div className="flex items-center gap-1.5 text-xs font-medium text-[#6F42C1] mb-1">
+                                <Stethoscope className="w-3.5 h-3.5" />
+                                Your care team
+                              </div>
+                              <p className="text-sm text-gray-600">{q.care_team_response}</p>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="mt-3 flex items-end gap-2">
