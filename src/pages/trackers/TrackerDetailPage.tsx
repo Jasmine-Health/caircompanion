@@ -443,8 +443,8 @@ export function TrackerDetailPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-gray-900">{obs.value_string}</p>
-                      <p className="text-sm text-gray-500">{obs.unit}</p>
+                      <p className="font-bold text-gray-900">{obs.value_string || obs.value}</p>
+                      {!obs.value_string && <p className="text-sm text-gray-500">{obs.unit}</p>}
                     </div>
                   </div>
                 ))
