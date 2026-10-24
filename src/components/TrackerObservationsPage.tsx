@@ -118,8 +118,7 @@ export function TrackerObservationsPage({
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-900">{obs.display}</p>
                     <p className="text-sm text-gray-500">
-                      {obs.value_string || obs.value}
-                      {obs.unit ? ` ${obs.unit}` : ''}
+                      {obs.value_string || `${obs.value}${obs.unit ? ` ${obs.unit}` : ''}`}
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
                       {obs.source} •{' '}
