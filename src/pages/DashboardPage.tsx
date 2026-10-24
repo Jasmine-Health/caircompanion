@@ -296,7 +296,7 @@ export function DashboardPage() {
                   <p className="text-xl font-bold text-gray-900 mt-1">
                     {vital?.value_string ? (
                       vital.value_string
-                    ) : vital?.value != null && vital.value !== '' ? (
+                    ) : vital?.value != null ? (
                       <>
                         {vital.value}
                         <span className="text-sm font-normal text-gray-400 ml-1">{vital.unit}</span>
