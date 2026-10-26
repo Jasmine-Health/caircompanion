@@ -10,6 +10,7 @@ import { ForgotPasswordPage } from './ForgotPasswordPage';
 import { ResetPasswordPage } from './ResetPasswordPage';
 import { OAuthCallbackPage } from './OAuthCallbackPage';
 import * as authService from '../../services/authService';
+import { mockAuthActionResult, mockRegisterUser } from '../../test/authFixtures';
 
 vi.mock('../../hooks/usePWAInstall', () => ({
   usePWAInstall: () => ({
@@ -81,24 +82,9 @@ describe('auth pages', () => {
         updatedAt: '',
       },
     });
-    vi.mocked(authService.register).mockResolvedValue({
-      access_token: 'token',
-      token_type: 'bearer',
-      expires_in: 3600,
-      user: {
-        email: 'jane@example.com',
-        first_name: 'Jane',
-        last_name: 'Doe',
-        is_active: true,
-        agreed_to_sms: false,
-        role: 'patient',
-        timezone: 'UTC',
-        createdAt: '',
-        updatedAt: '',
-      },
-    });
-    vi.mocked(authService.forgotPassword).mockResolvedValue(undefined);
-    vi.mocked(authService.resetPassword).mockResolvedValue(undefined);
+    vi.mocked(authService.register).mockResolvedValue(mockRegisterUser);
+    vi.mocked(authService.forgotPassword).mockResolvedValue(mockAuthActionResult);
+    vi.mocked(authService.resetPassword).mockResolvedValue(mockAuthActionResult);
     vi.mocked(authService.getGoogleAuthUrl).mockRejectedValue(new Error('fail'));
   });
 
