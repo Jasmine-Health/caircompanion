@@ -67,6 +67,7 @@ import { ConnectorsPage } from './ConnectorsPage';
 import { CaregiversPage } from './CaregiversPage';
 import { SettingsPage } from './SettingsPage';
 import { OAuthCallbackPage } from './auth/OAuthCallbackPage';
+import { mockVoiceModel } from '../test/voiceModelFixtures';
 import { ChatPage } from './ChatPage';
 import { VoicePage } from './VoicePage';
 import { HealthDataPage } from './HealthDataPage';
@@ -276,7 +277,7 @@ describe('page interactions', () => {
     vi.mocked(cairgiverService.sendPatientRequest).mockResolvedValue(undefined);
     vi.mocked(cairgiverService.removeCairgiverConnection).mockResolvedValue(undefined);
 
-    vi.mocked(voiceService.getVoiceModels).mockResolvedValue([{ id: 'v1', name: 'Voice One' }]);
+    vi.mocked(voiceService.getVoiceModels).mockResolvedValue([mockVoiceModel]);
     vi.mocked(voiceService.resolveUserVoiceModel).mockResolvedValue('v1');
     vi.mocked(voiceService.getVoiceSample).mockResolvedValue(new Blob(['audio']));
     vi.mocked(voiceService.updateUserVoiceModel).mockResolvedValue('v1');
@@ -375,7 +376,8 @@ describe('page interactions', () => {
     await user.click(screen.getByRole('button', { name: /Change Password/i }));
     expect(await screen.findByRole('heading', { name: 'Change Password' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /Voice Model/i }));
-    expect(await screen.findByText(/Voice One|Select a voice/i)).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Assistant Voice' })).toBeInTheDocument();
+    expect(screen.getAllByText('Voice One').length).toBeGreaterThan(0);
   });
 
   it('oauth callback stores token and user session', async () => {
@@ -387,6 +389,7 @@ describe('page interactions', () => {
           <AuthProvider>
             <Routes>
               <Route path="/oauth-callback" element={<OAuthCallbackPage />} />
+              <Route path="/voice" element={<div data-testid="voice-redirect" />} />
             </Routes>
           </AuthProvider>
         </OrganizationProvider>
@@ -397,20 +400,8 @@ describe('page interactions', () => {
   });
 
   it('chat page renders message input', async () => {
-    class MockWebSocket {
-      readyState = 1;
-      onopen: (() => void) | null = null;
-      close = vi.fn();
-      send = vi.fn();
-      constructor() {
-        queueMicrotask(() => this.onopen?.());
-      }
-    }
-    vi.stubGlobal('WebSocket', MockWebSocket);
-
     renderPage('/chat', <ChatPage />);
     expect(await screen.findByPlaceholderText('Message CairCompanion...')).toBeInTheDocument();
-    vi.unstubAllGlobals();
   });
 
   it('voice page renders speak control', async () => {

@@ -153,6 +153,7 @@ describe('auth pages', () => {
           <AuthProvider>
             <Routes>
               <Route path="/oauth-callback" element={<OAuthCallbackPage />} />
+              <Route path="/voice" element={<div data-testid="voice-redirect" />} />
             </Routes>
           </AuthProvider>
         </OrganizationProvider>
@@ -175,6 +176,7 @@ describe('auth pages', () => {
           <AuthProvider>
             <Routes>
               <Route path="/oauth-callback" element={<OAuthCallbackPage />} />
+              <Route path="/voice" element={<div data-testid="voice-redirect" />} />
             </Routes>
           </AuthProvider>
         </OrganizationProvider>
