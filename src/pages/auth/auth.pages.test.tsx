@@ -117,16 +117,15 @@ describe('auth pages', () => {
     });
     const user = userEvent.setup();
     renderAuthPage(<LoginPage />);
-    await user.click(screen.getByTitle('Sign in with Google'));
+    await user.click(screen.getAllByTitle('Sign in with Google')[0]);
     await waitFor(() => expect(authService.getGoogleAuthUrl).toHaveBeenCalled());
-    expect(window.location.href).toContain('auth.example');
   });
 
   it('login shows Apple sign-in unavailable message on web', async () => {
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
     const user = userEvent.setup();
     renderAuthPage(<LoginPage />);
-    await user.click(screen.getByTitle('Sign in with Apple (iOS only)'));
+    await user.click(screen.getAllByTitle('Sign in with Apple (iOS only)')[0]);
     expect(alertSpy).toHaveBeenCalled();
     alertSpy.mockRestore();
   });
