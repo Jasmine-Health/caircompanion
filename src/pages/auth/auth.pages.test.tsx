@@ -110,6 +110,27 @@ describe('auth pages', () => {
     await waitFor(() => expect(authService.login).toHaveBeenCalled());
   });
 
+  it('login starts Google sign-in when auth url is returned', async () => {
+    vi.mocked(authService.getGoogleAuthUrl).mockResolvedValueOnce({
+      authorization_url: 'https://auth.example/google',
+      state: 'state-1',
+    });
+    const user = userEvent.setup();
+    renderAuthPage(<LoginPage />);
+    await user.click(screen.getByTitle('Sign in with Google'));
+    await waitFor(() => expect(authService.getGoogleAuthUrl).toHaveBeenCalled());
+    expect(window.location.href).toContain('auth.example');
+  });
+
+  it('login shows Apple sign-in unavailable message on web', async () => {
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    const user = userEvent.setup();
+    renderAuthPage(<LoginPage />);
+    await user.click(screen.getByTitle('Sign in with Apple (iOS only)'));
+    expect(alertSpy).toHaveBeenCalled();
+    alertSpy.mockRestore();
+  });
+
   it('register requires terms acceptance then submits', async () => {
     const user = userEvent.setup();
     const view = renderAuthPage(<RegisterPage />);

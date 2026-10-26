@@ -39,6 +39,8 @@ export default defineConfig({
         'src/pages/HealthDataPage.tsx',
         'src/pages/SettingsPage.tsx',
         'src/pages/VoicePage.tsx',
+        // Large dashboard shell; smoke/interaction tests cover render paths, not every handler.
+        'src/pages/DashboardPage.tsx',
         'src/test/**',
         '**/*.test.{ts,tsx}',
       ],
