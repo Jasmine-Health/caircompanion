@@ -94,6 +94,21 @@ describe('api helpers', () => {
     );
   });
 
+  it('fetchAPIWithFormData maps API and network errors', async () => {
+    const formData = new FormData();
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 403,
+      json: async () => ({ detail: 'Forbidden' }),
+    } as Response);
+    await expect(fetchAPIWithFormData('/login', formData)).rejects.toBeInstanceOf(APIError);
+
+    vi.mocked(fetch).mockRejectedValueOnce(new Error('offline'));
+    await expect(fetchAPIWithFormData('/login', formData)).rejects.toThrow(
+      'Network error or server unavailable'
+    );
+  });
+
   it('APIError stores metadata', () => {
     const err = new APIError('failed', 500, { reason: 'x' });
     expect(err).toBeInstanceOf(Error);
