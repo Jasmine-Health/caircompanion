@@ -4,21 +4,6 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '../contexts/AuthContext';
 import { OrganizationProvider } from '../contexts/OrganizationContext';
 
-vi.mock('framer-motion', () => {
-  const Motion = ({ children, ...props }: { children?: React.ReactNode }) => (
-    <div {...props}>{children}</div>
-  );
-  return {
-    motion: new Proxy(
-      {},
-      {
-        get: () => Motion,
-      }
-    ),
-    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  };
-});
-
 vi.mock('../hooks/useVoiceChat', () => ({
   useVoiceChat: () => ({
     status: 'ready',
@@ -39,6 +24,15 @@ vi.mock('../hooks/usePWAInstall', () => ({
     setShowInstructions: vi.fn(),
     platform: 'desktop' as const,
   }),
+}));
+
+vi.mock('../services/voiceService', () => ({
+  getVoiceModels: vi.fn().mockResolvedValue([]),
+  resolveUserVoiceModel: vi.fn().mockResolvedValue('aura-2-vesta-en'),
+  getVoiceSample: vi.fn(),
+  updateUserVoiceModel: vi.fn(),
+  getCachedVoiceModel: vi.fn().mockReturnValue('aura-2-vesta-en'),
+  clearCachedVoiceModel: vi.fn(),
 }));
 
 vi.mock('../services/authService', () => ({
@@ -81,6 +75,13 @@ vi.mock('../services/healthDataService', () => ({
   }),
   getAlerts: vi.fn().mockResolvedValue({ patient_id: 'p1', date: '2026-01-01', count: 0, alerts: [] }),
   getCareSteps: vi.fn().mockResolvedValue([]),
+  getCareTeamNotes: vi.fn().mockResolvedValue({
+    patient_id: 'p1',
+    physician_instructions: [],
+    nurse_questions: [],
+    caregiver_notifications: [],
+  }),
+  replyToNurseQuestion: vi.fn(),
   completeCareStep: vi.fn(),
   completeAlert: vi.fn(),
   snoozeAlert: vi.fn(),
@@ -138,7 +139,7 @@ vi.mock('../services/cairgiverService', () => ({
 import { VoicePage } from './VoicePage';
 import { ChatPage } from './ChatPage';
 import { DashboardPage } from './DashboardPage';
-import { AlertsPage } from './AlertsPage';
+import { AlertsPage, AppointmentsPage } from './AlertsPage';
 import { CareStepsPage } from './CareStepsPage';
 import { CarePlanPage } from './CarePlanPage';
 import { MedicationsPage, ExercisePage, MoodPage, DietPage } from './TrackerPages';
@@ -153,6 +154,7 @@ import { LoginPage } from './auth/LoginPage';
 import { OrganizationSelectionPage } from './auth/OrganizationSelectionPage';
 import { ForgotPasswordPage } from './auth/ForgotPasswordPage';
 import { RegisterPage } from './auth/RegisterPage';
+import { CareNotesPage } from './CareNotesPage';
 
 function renderPage(path: string, element: React.ReactElement) {
   return render(
@@ -183,8 +185,10 @@ describe('page smoke tests', () => {
       ['/chat', <ChatPage />, /Message your health companion|Chat/i],
       ['/dashboard', <DashboardPage />, /Dashboard|health/i],
       ['/alerts', <AlertsPage />, /Alerts|No Alerts/i],
+      ['/appointments', <AppointmentsPage />, /Appointments|No Appointments/i],
       ['/care-steps', <CareStepsPage />, /Care steps|No care steps/i],
       ['/care-plan', <CarePlanPage />, /Care Plans|No care plans/i],
+      ['/care-notes', <CareNotesPage />, /Care notes|Questions for you/i],
       ['/medications', <MedicationsPage />, /Medications/i],
       ['/exercise', <ExercisePage />, /Exercise/i],
       ['/mood', <MoodPage />, /Mood/i],

@@ -20,16 +20,6 @@ vi.mock('../../services/organizationService', () => ({
   unenrollFromOrganization: vi.fn(),
 }));
 
-vi.mock('framer-motion', () => {
-  const Motion = ({ children, ...props }: { children?: React.ReactNode }) => (
-    <div {...props}>{children}</div>
-  );
-  return {
-    motion: new Proxy({}, { get: () => Motion }),
-    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  };
-});
-
 describe('layout components', () => {
   it('renders bottom navigation tabs', () => {
     render(

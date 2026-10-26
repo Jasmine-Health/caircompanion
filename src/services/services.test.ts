@@ -94,7 +94,7 @@ describe('service layer', () => {
     );
 
     const google = await authService.getGoogleAuthUrl('patient', 'org-1');
-    const entra = await authService.getEntraAuthUrl('patient');
+    const entra = await authService.getEntraAuthUrl('patient', 'org-1');
     await authService.deleteAccount(true);
 
     expect(google.authorization_url).toBe('g');
@@ -142,6 +142,10 @@ describe('service layer', () => {
     await healthDataService.getPatientData();
     await healthDataService.getEncounters();
     await healthDataService.getDiagnosticReports();
+    await healthDataService.getCareSteps();
+    await healthDataService.completeCareStep('step-1');
+    await healthDataService.getCareTeamNotes('p@example.com');
+    await healthDataService.replyToNurseQuestion('conv-1', 'Feeling fine');
 
     expect(mockFetchAPI).toHaveBeenCalledWith(
       expect.stringContaining('/summary?date=2026-01-01'),
