@@ -5,37 +5,18 @@ import { InstallPromptModal } from './InstallPromptModal';
 import { TermsAndConditionsModal } from './TermsAndConditionsModal';
 
 import * as healthDataService from '../services/healthDataService';
+import { mockCarePlanDetail } from '../test/healthFixtures';
 
 vi.mock('../services/healthDataService', () => ({
   getCarePlanDetail: vi.fn(),
 }));
 
 const richPlanDetail = {
-  plan_id: 'plan-1',
-  name: 'Recovery Plan',
+  ...mockCarePlanDetail,
   description: 'Details',
-  type: 'general',
-  phase: '1',
-  status: 'active',
-  plan_type: 'care',
-  activities: ['Walk daily'],
   instructions: [{ section_type: 'note', title: 'Note', content: 'Rest well' }],
-  steps: [
-    {
-      step_id: 'st-1',
-      label: 'Walk',
-      status: 'followed_through',
-      due_date: '2026-01-01',
-      followed_through_at: '2026-01-02',
-      description: 'Easy pace',
-      type: 'exercise',
-      priority: 'low',
-    },
-  ],
   patient_context: {
-    medications: [{ name: 'Med', dosage: '1mg', frequency: 'Daily', timing: 'AM', instructions: 'With food' }],
-    monitoring: [{ name: 'BP', value_string: '120/80', effective_date: '2026-01-01' }],
-    conditions: [{ title: 'HF', code: 'I50' }],
+    ...mockCarePlanDetail.patient_context!,
     allergies: ['Latex'],
   },
 };

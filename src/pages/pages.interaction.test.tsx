@@ -68,32 +68,18 @@ import { CaregiversPage } from './CaregiversPage';
 import { SettingsPage } from './SettingsPage';
 import { OAuthCallbackPage } from './auth/OAuthCallbackPage';
 import { mockVoiceModel } from '../test/voiceModelFixtures';
+import { mockAuthActionResult, mockPatientUser, mockRegisterUser } from '../test/authFixtures';
+import {
+  mockAlert,
+  mockCarePlanDetail,
+  mockCarePlanSummary,
+  mockConnector,
+  mockSnoozeResult,
+} from '../test/healthFixtures';
 import { ChatPage } from './ChatPage';
 import { VoicePage } from './VoicePage';
 import { HealthDataPage } from './HealthDataPage';
 import { OrganizationSettingsPage } from './OrganizationSettingsPage';
-
-const patientUser = {
-  email: 'joe@example.com',
-  first_name: 'Joe',
-  last_name: 'Example',
-  is_active: true,
-  agreed_to_sms: false,
-  role: 'patient' as const,
-  timezone: 'UTC',
-  createdAt: '',
-  updatedAt: '',
-};
-
-const sampleAlert = {
-  id: 'alert-1',
-  type: 'medication' as const,
-  title: 'Morning medication',
-  description: 'Take with food',
-  time: ['08:00'],
-  is_completed_today: false,
-  completed_dates: [] as string[],
-};
 
 function renderPage(path: string, element: React.ReactElement) {
   return render(
@@ -119,22 +105,17 @@ describe('page interactions', () => {
       JSON.stringify({ id: 'org-1', name: 'Pulp Digital', logo: '/logo.png' })
     );
 
-    vi.mocked(authService.getCurrentUser).mockResolvedValue(patientUser);
+    vi.mocked(authService.getCurrentUser).mockResolvedValue(mockPatientUser);
     vi.mocked(authService.login).mockResolvedValue({
       access_token: 'new-token',
       token_type: 'bearer',
       expires_in: 3600,
-      user: patientUser,
+      user: mockPatientUser,
     });
-    vi.mocked(authService.changePassword).mockResolvedValue(undefined);
-    vi.mocked(authService.register).mockResolvedValue({
-      access_token: 'reg-token',
-      token_type: 'bearer',
-      expires_in: 3600,
-      user: patientUser,
-    });
-    vi.mocked(authService.forgotPassword).mockResolvedValue(undefined);
-    vi.mocked(authService.resetPassword).mockResolvedValue(undefined);
+    vi.mocked(authService.changePassword).mockResolvedValue(mockAuthActionResult);
+    vi.mocked(authService.register).mockResolvedValue(mockRegisterUser);
+    vi.mocked(authService.forgotPassword).mockResolvedValue(mockAuthActionResult);
+    vi.mocked(authService.resetPassword).mockResolvedValue(mockAuthActionResult);
     vi.mocked(authService.getGoogleAuthUrl).mockResolvedValue({
       authorization_url: 'https://auth.example/google',
       state: 's',
@@ -156,26 +137,29 @@ describe('page interactions', () => {
       ],
       allergies: ['Penicillin'],
       recent_vitals: {
-        'Blood Pressure': { value: '120/80', unit: 'mmHg', date: '2026-01-01' },
+        'Blood Pressure': {
+          value: 120,
+          value_string: '120/80',
+          unit: 'mmHg',
+          effective_date: '2026-01-01',
+          source: 'manual',
+        },
       },
       alerts: { total_active: 1, completed_today: 0 },
-      care_plans: [{ plan_id: 'plan-1', name: 'Recovery Plan', status: 'active', type: 'general' }],
+      care_plans: [mockCarePlanSummary],
     });
     vi.mocked(healthDataService.getAlerts).mockResolvedValue({
       patient_id: 'p1',
       date: '2026-01-01',
       count: 1,
-      alerts: [sampleAlert],
+      alerts: [mockAlert],
     });
     vi.mocked(healthDataService.completeAlert).mockResolvedValue({
       status: 'ok',
       alert_id: 'alert-1',
       completed_date: '2026-01-01',
     });
-    vi.mocked(healthDataService.snoozeAlert).mockResolvedValue({
-      alert_id: 'alert-1',
-      snoozed_until: '2026-01-01T09:15:00Z',
-    });
+    vi.mocked(healthDataService.snoozeAlert).mockResolvedValue(mockSnoozeResult);
     vi.mocked(healthDataService.getCareSteps).mockResolvedValue([
       {
         step_id: 'seed_daily_plan_w1_s1',
@@ -209,44 +193,20 @@ describe('page interactions', () => {
     vi.mocked(healthDataService.getCarePlans).mockResolvedValue({
       patient_id: 'p1',
       count: 1,
-      care_plans: [{ plan_id: 'plan-1', name: 'Recovery Plan', status: 'active', type: 'general', phase: '1' }],
+      care_plans: [mockCarePlanSummary],
     });
-    vi.mocked(healthDataService.getCarePlanDetail).mockResolvedValue({
-      plan_id: 'plan-1',
-      name: 'Recovery Plan',
-      description: 'Follow daily steps',
-      type: 'general',
-      phase: '1',
-      status: 'active',
-      plan_type: 'care',
-      activities: ['Walk 10 minutes'],
-      instructions: [{ section_type: 'note', title: 'Note', content: 'Hydrate well' }],
-      steps: [
-        {
-          step_id: 's1',
-          label: 'Morning walk',
-          status: 'pending',
-          due_date: '2026-01-01',
-          description: 'Easy pace',
-          type: 'exercise',
-          priority: 'medium',
-        },
-      ],
-      patient_context: {
-        medications: [{ name: 'Med A', dosage: '5mg', frequency: 'Daily', timing: 'AM', instructions: '' }],
-        monitoring: [{ name: 'Weight', value_string: '180 lbs', effective_date: '2026-01-01' }],
-        conditions: [{ title: 'HF', code: 'I50' }],
-        allergies: ['Sulfa'],
-      },
-    });
+    vi.mocked(healthDataService.getCarePlanDetail).mockResolvedValue(mockCarePlanDetail);
     vi.mocked(healthDataService.getPatientData).mockResolvedValue([]);
     vi.mocked(healthDataService.getEncounters).mockResolvedValue([]);
     vi.mocked(healthDataService.getDiagnosticReports).mockResolvedValue([]);
 
-    vi.mocked(connectorService.getConnectors).mockResolvedValue([
-      { ehr_system: 'epic', is_active: true, last_sync: null, status: 'connected' },
-    ]);
-    vi.mocked(connectorService.createConnector).mockResolvedValue(undefined);
+    vi.mocked(connectorService.getConnectors).mockResolvedValue([mockConnector]);
+    vi.mocked(connectorService.createConnector).mockResolvedValue({
+      ehr_system: 'cerner',
+      is_active: true,
+      is_authorized: false,
+      status: 'pending',
+    });
     vi.mocked(connectorService.deleteConnector).mockResolvedValue(undefined);
     vi.mocked(connectorService.authorizeConnector).mockResolvedValue({ authorization_url: 'https://ehr/auth' });
 
@@ -272,10 +232,13 @@ describe('page interactions', () => {
         updatedAt: '2026-01-01',
       },
     ]);
-    vi.mocked(cairgiverService.approveRequest).mockResolvedValue(undefined);
+    vi.mocked(cairgiverService.approveRequest).mockResolvedValue({ message: 'ok' });
     vi.mocked(cairgiverService.searchPatients).mockResolvedValue([]);
-    vi.mocked(cairgiverService.sendPatientRequest).mockResolvedValue(undefined);
-    vi.mocked(cairgiverService.removeCairgiverConnection).mockResolvedValue(undefined);
+    vi.mocked(cairgiverService.sendPatientRequest).mockResolvedValue({
+      relationship_id: 'rel-new',
+      message: 'sent',
+    });
+    vi.mocked(cairgiverService.removeCairgiverConnection).mockResolvedValue({ message: 'removed' });
 
     vi.mocked(voiceService.getVoiceModels).mockResolvedValue([mockVoiceModel]);
     vi.mocked(voiceService.resolveUserVoiceModel).mockResolvedValue('v1');
@@ -350,13 +313,12 @@ describe('page interactions', () => {
     renderPage('/connectors', <ConnectorsPage />);
 
     expect(await screen.findByText(/epic/i)).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /Add|Connect/i }));
-    const addDialog = await screen.findByText(/Select EHR|Add connector/i);
-    expect(addDialog).toBeInTheDocument();
 
-    const authorize = screen.getByRole('button', { name: /Authorize/i });
-    await user.click(authorize);
+    await user.click(screen.getByRole('button', { name: /Authorize/i }));
     await waitFor(() => expect(connectorService.authorizeConnector).toHaveBeenCalledWith('epic'));
+
+    await user.click(screen.getByRole('button', { name: /^Add$/i }));
+    expect(await screen.findByText(/Add Connector/i)).toBeInTheDocument();
   });
 
   it('caregivers page shows list and invite form', async () => {
