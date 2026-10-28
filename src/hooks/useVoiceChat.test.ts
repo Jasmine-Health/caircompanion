@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { installDefaultWebSocket } from '../test/defaultWebSocket';
 import { useVoiceChat } from './useVoiceChat';
 
 let latestSocket: MockWebSocket | null = null;
@@ -49,6 +50,10 @@ function createAudioContextMock() {
       onended: null as (() => void) | null,
     })),
     createMediaStreamSource: vi.fn(() => ({ connect: vi.fn() })),
+    createGain: vi.fn(() => ({
+      connect: vi.fn(),
+      gain: { value: 1 },
+    })),
     audioWorklet: {
       addModule: vi.fn().mockResolvedValue(undefined),
     },
@@ -84,6 +89,7 @@ describe('useVoiceChat', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    installDefaultWebSocket();
   });
 
   it('connects and handles server ready and transcript messages', async () => {
