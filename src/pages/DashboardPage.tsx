@@ -294,16 +294,36 @@ export function DashboardPage() {
                   </div>
                   <p className="text-xs text-gray-500 font-medium">{name}</p>
                   <p className="text-xl font-bold text-gray-900 mt-1">
-                    {vital?.value_string ? (
-                      vital.value_string
-                    ) : vital?.value != null ? (
-                      <>
-                        {vital.value}
-                        <span className="text-sm font-normal text-gray-400 ml-1">{vital.unit}</span>
-                      </>
-                    ) : (
-                      'NA'
-                    )}
+                    {(() => {
+                      // Blood Pressure arrives as value_string "120/80" with a
+                      // separate unit "mmHg", while weight/HR already include
+                      // their unit in value_string. Show the unit once: append
+                      // it only when value_string doesn't already carry it.
+                      const text = vital?.value_string?.trim();
+                      const unit = vital?.unit?.trim();
+                      const missingUnit = Boolean(
+                        text && unit && !text.toLowerCase().includes(unit.toLowerCase())
+                      );
+                      if (text) {
+                        return (
+                          <>
+                            {text}
+                            {missingUnit && (
+                              <span className="text-sm font-normal text-gray-400 ml-1">{unit}</span>
+                            )}
+                          </>
+                        );
+                      }
+                      if (vital?.value != null) {
+                        return (
+                          <>
+                            {vital.value}
+                            <span className="text-sm font-normal text-gray-400 ml-1">{vital.unit}</span>
+                          </>
+                        );
+                      }
+                      return 'NA';
+                    })()}
                   </p>
                 </div>
               ))}
