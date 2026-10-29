@@ -46,6 +46,45 @@ describe('TrackerObservationsPage', () => {
     expect(fetchData).toHaveBeenCalled();
   });
 
+  it('shows a reading unit once, whether it comes from value_string or value + unit', async () => {
+    const base = {
+      patient_id: 'p1',
+      observation_type: 'vital',
+      code: 'v',
+      source: 'manual',
+      source_ref: 'ref',
+      confidence: 1,
+      effective_date: '2026-01-01',
+      recorded_at: '2026-01-01T10:00:00Z',
+      status: 'final',
+    };
+    const fetchData = vi.fn().mockResolvedValue({
+      patient_id: 'p1',
+      type: 'vital',
+      count: 2,
+      observations: [
+        { ...base, id: 'w', display: 'Body Weight', value: 148.4, value_string: '148.4 lb', unit: 'lb' },
+        { ...base, id: 'h', display: 'Heart Rate', value: 72, value_string: '', unit: 'bpm' },
+      ],
+    });
+
+    render(
+      <TrackerObservationsPage
+        title="Vitals"
+        subtitle="Vital records"
+        icon={Pill}
+        iconColor="text-purple-600"
+        bgColor="bg-purple-100"
+        fetchData={fetchData}
+        useDateRange={false}
+      />
+    );
+
+    expect(await screen.findByText('148.4 lb')).toBeInTheDocument();
+    expect(screen.getByText('72 bpm')).toBeInTheDocument();
+    expect(screen.queryByText(/lb lb/)).not.toBeInTheDocument();
+  });
+
   it('shows API error and retries load', async () => {
     const fetchData = vi
       .fn()
