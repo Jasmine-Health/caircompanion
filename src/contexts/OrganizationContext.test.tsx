@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import { OrganizationProvider, useOrganization } from './OrganizationContext';
 import * as organizationService from '../services/organizationService';
+import { SESSION_DATA_CLEARED_EVENT } from '../lib/sessionCleanup';
 
 vi.mock('../services/organizationService', () => ({
   getOrganizations: vi.fn(),
@@ -70,5 +71,24 @@ describe('OrganizationContext', () => {
     });
 
     expect(JSON.parse(localStorage.getItem('selectedOrganization') || '{}').id).toBe('org-2');
+  });
+
+  it('clears selectedOrganization when AuthContext broadcasts a session-data-cleared event', async () => {
+    localStorage.setItem(
+      'selectedOrganization',
+      JSON.stringify({ id: 'org-1', name: 'Pulp Digital', logo: 'logo.png' })
+    );
+    vi.mocked(organizationService.getOrganizations).mockResolvedValue({ count: 0, organizations: [] });
+
+    const { result } = renderHook(() => useOrganization(), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.selectedOrganization?.id).toBe('org-1');
+
+    act(() => {
+      window.dispatchEvent(new Event(SESSION_DATA_CLEARED_EVENT));
+    });
+
+    expect(result.current.selectedOrganization).toBeNull();
+    expect(localStorage.getItem('selectedOrganization')).toBeNull();
   });
 });

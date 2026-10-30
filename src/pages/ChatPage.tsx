@@ -3,9 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, User, MessageSquare } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { API_CONFIG } from '../config/api';
+import { CHAT_HISTORY_KEY } from '../lib/sessionCleanup';
 import type { ChatMessage } from '../types';
-
-const CHAT_HISTORY_KEY = 'chat_history';
 
 // Helper to load chat history from localStorage
 const loadChatHistory = (): ChatMessage[] => {
