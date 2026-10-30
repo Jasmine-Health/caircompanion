@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 import type { User } from '../types';
 import { login as loginAPI, getCurrentUser, updateTimezone } from '../services/authService';
 import { clearCachedVoiceModel, resolveUserVoiceModel } from '../services/voiceService';
+import { clearStaleSessionData } from '../lib/sessionCleanup';
 
 interface AuthContextType {
   user: User | null;
@@ -42,7 +43,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           persistVoicePreference();
         })
         .catch(() => {
+          // Silent session expiry (no explicit logout click): still a session end,
+          // so the stale per-user data must not leak into whoever uses this device next.
           localStorage.removeItem('access_token');
+          clearStaleSessionData();
         })
         .finally(() => setIsLoading(false));
     } else {
@@ -76,11 +80,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     setUser(null);
     localStorage.removeItem('access_token');
-    localStorage.removeItem('chat_history');
+    clearStaleSessionData();
     clearCachedVoiceModel();
   }, []);
 
   const setTokenAndUser = useCallback((token: string, userData: User | null) => {
+    // A fresh session is starting here (e.g. the OAuth callback). If the previous
+    // session ended without logout() or the expiry handler running cleanly, its
+    // chat history/organization could still be sitting in storage, so clear it
+    // before the new session's token takes hold.
+    clearStaleSessionData();
     localStorage.setItem('access_token', token);
     if (userData) {
       setUser(userData);
