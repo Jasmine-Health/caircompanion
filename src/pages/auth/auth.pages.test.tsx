@@ -190,4 +190,39 @@ describe('auth pages', () => {
     );
     await waitFor(() => expect(localStorage.getItem('access_token')).toBe('oauth-token'));
   });
+
+  it('oauth callback clears a previous session chat history and organization left on this device', async () => {
+    localStorage.setItem(
+      'chat_history',
+      JSON.stringify([{ id: '1', role: 'user', content: 'leaked message from previous patient' }])
+    );
+    localStorage.setItem(
+      'selectedOrganization',
+      JSON.stringify({ id: 'org-1', name: 'Pulp Digital', logo: '/logo.png' })
+    );
+
+    render(
+      <MemoryRouter
+        initialEntries={[
+          {
+            pathname: '/oauth-callback',
+            search: '?access_token=oauth-token&user_email=jane@example.com&user_name=Jane%20Doe',
+          },
+        ]}
+      >
+        <OrganizationProvider>
+          <AuthProvider>
+            <Routes>
+              <Route path="/oauth-callback" element={<OAuthCallbackPage />} />
+              <Route path="/voice" element={<div data-testid="voice-redirect" />} />
+            </Routes>
+          </AuthProvider>
+        </OrganizationProvider>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => expect(localStorage.getItem('access_token')).toBe('oauth-token'));
+    expect(localStorage.getItem('chat_history')).toBeNull();
+    await waitFor(() => expect(localStorage.getItem('selectedOrganization')).toBeNull());
+  });
 });
