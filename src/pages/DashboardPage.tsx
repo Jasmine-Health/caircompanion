@@ -309,7 +309,7 @@ export function DashboardPage() {
                           <>
                             {text}
                             {missingUnit && (
-                              <span className="text-sm font-normal text-gray-400 ml-1">{unit}</span>
+                              <span className="text-sm font-normal text-gray-400"> {unit}</span>
                             )}
                           </>
                         );
@@ -318,7 +318,7 @@ export function DashboardPage() {
                         return (
                           <>
                             {vital.value}
-                            <span className="text-sm font-normal text-gray-400 ml-1">{vital.unit}</span>
+                            <span className="text-sm font-normal text-gray-400"> {vital.unit}</span>
                           </>
                         );
                       }
