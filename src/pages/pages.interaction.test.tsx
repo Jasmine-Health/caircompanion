@@ -298,7 +298,7 @@ describe('page interactions', () => {
     renderPage('/care-notes', <CareNotesPage />);
 
     expect(await screen.findByText('How are you feeling?')).toBeInTheDocument();
-    const input = screen.getByPlaceholderText('Type your reply...');
+    const input = await screen.findByPlaceholderText('Type your reply...');
     await user.type(input, 'Feeling better');
     await user.click(screen.getByRole('button', { name: /^Reply$/i }));
     await waitFor(() =>

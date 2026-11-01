@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom/vitest';
+import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
 import { installDefaultWebSocket } from './defaultWebSocket';
 
@@ -48,7 +49,10 @@ console.error = (...args: unknown[]) => {
   originalConsoleError(...args);
 };
 
+// Vitest globals are off, so Testing Library's auto-cleanup never registers;
+// without this, rendered trees leak into the next test's queries.
 afterEach(() => {
+  cleanup();
   localStorage.clear();
   vi.clearAllMocks();
   installDefaultWebSocket();
