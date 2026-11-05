@@ -22,6 +22,8 @@ import { TrackersPage } from './pages/trackers/TrackersPage';
 import { TrackerDetailPage } from './pages/trackers/TrackerDetailPage';
 import { CaregiversPage } from './pages/CaregiversPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { HealthScorePage } from './pages/HealthScorePage';
+import { ProgressPage } from './pages/ProgressPage';
 import { OrganizationSettingsPage } from './pages/OrganizationSettingsPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -109,6 +111,8 @@ function App() {
 
               {/* Drawer menu screens */}
               <Route path="health-data" element={<HealthDataPage />} />
+              <Route path="health-score" element={<HealthScorePage />} />
+              <Route path="progress" element={<ProgressPage />} />
               <Route path="appointments" element={<AppointmentsPage />} />
               <Route path="exercise" element={<ExercisePage />} />
               <Route path="mood" element={<MoodPage />} />

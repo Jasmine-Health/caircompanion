@@ -149,6 +149,8 @@ import { TrackersPage } from './trackers/TrackersPage';
 import { TrackerDetailPage } from './trackers/TrackerDetailPage';
 import { CaregiversPage } from './CaregiversPage';
 import { SettingsPage } from './SettingsPage';
+import { HealthScorePage } from './HealthScorePage';
+import { ProgressPage } from './ProgressPage';
 import { OrganizationSettingsPage } from './OrganizationSettingsPage';
 import { LoginPage } from './auth/LoginPage';
 import { OrganizationSelectionPage } from './auth/OrganizationSelectionPage';
@@ -196,6 +198,8 @@ describe('page smoke tests', () => {
       ['/health-data', <HealthDataPage />, /Health Data/i],
       ['/connectors', <ConnectorsPage />, /Connectors/i],
       ['/trackers', <TrackersPage />, /Health Trackers|Trackers/i],
+      ['/health-score', <HealthScorePage />, /Health Score/i],
+      ['/progress', <ProgressPage />, /Today's Progress/i],
       ['/trackers/vitals', <TrackerDetailPage />, /Vitals|Tracker/i],
       ['/caregivers', <CaregiversPage />, /Cairgiver|Connect/i],
       ['/settings', <SettingsPage />, /Settings/i],
