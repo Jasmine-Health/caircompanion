@@ -345,7 +345,7 @@ describe('page interactions', () => {
     expect(await screen.findByRole('heading', { name: 'Settings' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /Change Password/i }));
     expect(await screen.findByRole('heading', { name: 'Change Password' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /Voice Model/i }));
+    await user.click(screen.getByRole('button', { name: /Assistant Voice/i }));
     expect(await screen.findByRole('heading', { name: 'Assistant Voice' })).toBeInTheDocument();
     expect(screen.getAllByText('Voice One').length).toBeGreaterThan(0);
   });
