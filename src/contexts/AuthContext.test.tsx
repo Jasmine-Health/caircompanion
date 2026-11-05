@@ -77,6 +77,43 @@ describe('AuthContext', () => {
     expect(result.current.user?.email).toBe('joe@example.com');
   });
 
+  it('logout clears chat history so it cannot leak to the next user on this device', async () => {
+    localStorage.setItem('chat_history', JSON.stringify([{ id: '1', role: 'user', content: 'leaked message' }]));
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => result.current.logout());
+    expect(localStorage.getItem('chat_history')).toBeNull();
+  });
+
+  it('clears chat history when a session ends via silent token expiry, not just the logout button', async () => {
+    localStorage.setItem('access_token', 'expired-token');
+    localStorage.setItem('chat_history', JSON.stringify([{ id: '1', role: 'assistant', content: 'leaked message' }]));
+    vi.mocked(authService.getCurrentUser).mockRejectedValue(new Error('401 unauthorized'));
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(localStorage.getItem('access_token')).toBeNull();
+    expect(localStorage.getItem('chat_history')).toBeNull();
+  });
+
+  it('setTokenAndUser clears any chat history left over from a previous, improperly-ended session', async () => {
+    localStorage.setItem('chat_history', JSON.stringify([{ id: '1', role: 'user', content: 'leaked message' }]));
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => {
+      result.current.setTokenAndUser('oauth-session-token', patientUser);
+    });
+
+    expect(localStorage.getItem('chat_history')).toBeNull();
+    expect(localStorage.getItem('access_token')).toBe('oauth-session-token');
+  });
+
   it('syncs timezone when tab becomes visible', async () => {
     localStorage.setItem('access_token', 'token');
     vi.mocked(authService.getCurrentUser).mockResolvedValue(patientUser);

@@ -250,6 +250,14 @@ describe('page interactions', () => {
     const user = userEvent.setup();
     renderPage('/dashboard', <DashboardPage />);
 
+    // BP value and its unit render in sibling nodes; assert the combined text
+    // has a real space ("120/80 mmHg", not "120/80mmHg") on the <p> itself.
+    expect(
+      await screen.findByText(
+        (_, el) => el?.tagName === 'P' && /\b120\/80\s+mmHg\b/.test(el.textContent || '')
+      )
+    ).toBeInTheDocument();
+
     await user.click(await screen.findByRole('button', { name: /Recovery Plan/i }));
     await waitFor(() => expect(healthDataService.getCarePlanDetail).toHaveBeenCalledWith('plan-1'));
   });
@@ -290,7 +298,7 @@ describe('page interactions', () => {
     renderPage('/care-notes', <CareNotesPage />);
 
     expect(await screen.findByText('How are you feeling?')).toBeInTheDocument();
-    const input = screen.getByPlaceholderText('Type your reply...');
+    const input = await screen.findByPlaceholderText('Type your reply...');
     await user.type(input, 'Feeling better');
     await user.click(screen.getByRole('button', { name: /^Reply$/i }));
     await waitFor(() =>

@@ -5,11 +5,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { API_CONFIG } from '../config/api';
 import { ConnectionStatusBadge } from '../components/ConnectionStatusBadge';
 import { useInternetReachability } from '../hooks/useInternetReachability';
+import { CHAT_HISTORY_KEY } from '../lib/sessionCleanup';
 import type { ChatMessage } from '../types';
 
-const CHAT_HISTORY_KEY = 'chat_history';
 const WS_RECONNECT_MS = 2_000;
-
 // Helper to load chat history from localStorage
 const loadChatHistory = (): ChatMessage[] => {
   try {

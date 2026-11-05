@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { Organization, UserOrganization } from '../types';
 import { DEFAULT_ORGANIZATION_NAME, findOrganizationByName } from '../config/organization';
 import { getOrganizations, getMyEnrollments, switchOrganization as switchOrgAPI, enrollInOrganization as enrollOrgAPI, unenrollFromOrganization as unenrollOrgAPI, getCurrentOrganization } from '../services/organizationService';
+import { SESSION_DATA_CLEARED_EVENT } from '../lib/sessionCleanup';
 
 interface OrganizationContextType {
   selectedOrganization: Organization | null;
@@ -155,10 +156,19 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const clearSelectedOrganization = () => {
+  const clearSelectedOrganization = useCallback(() => {
     setSelectedOrganization(null);
     localStorage.removeItem('selectedOrganization');
-  };
+  }, []);
+
+  // AuthContext broadcasts this on every session end (logout, silent token expiry)
+  // and on a fresh login (OAuth callback). This provider stays mounted across those
+  // transitions, so removing the localStorage key alone would not reset the in-memory
+  // selectedOrganization already held by any component reading from this context.
+  useEffect(() => {
+    window.addEventListener(SESSION_DATA_CLEARED_EVENT, clearSelectedOrganization);
+    return () => window.removeEventListener(SESSION_DATA_CLEARED_EVENT, clearSelectedOrganization);
+  }, [clearSelectedOrganization]);
 
   return (
     <OrganizationContext.Provider
