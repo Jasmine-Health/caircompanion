@@ -3,9 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, User, MessageSquare } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { API_CONFIG } from '../config/api';
+import { ConnectionStatusBadge } from '../components/ConnectionStatusBadge';
+import { useInternetReachability } from '../hooks/useInternetReachability';
 import { CHAT_HISTORY_KEY } from '../lib/sessionCleanup';
 import type { ChatMessage } from '../types';
 
+const WS_RECONNECT_MS = 2_000;
 // Helper to load chat history from localStorage
 const loadChatHistory = (): ChatMessage[] => {
   try {
@@ -35,12 +38,17 @@ const saveChatHistory = (messages: ChatMessage[]) => {
 
 export function ChatPage() {
   const { user } = useAuth();
+  const hasInternet = useInternetReachability();
   const [messages, setMessages] = useState<ChatMessage[]>(() => loadChatHistory());
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
+  const [isWsOpen, setIsWsOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const hasInternetRef = useRef(hasInternet);
+  hasInternetRef.current = hasInternet;
+
+  const canSend = hasInternet && isWsOpen;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -56,74 +64,101 @@ export function ChatPage() {
   }, [messages]);
 
   useEffect(() => {
+    if (!hasInternet) {
+      setIsTyping(false);
+    }
+  }, [hasInternet]);
+
+  useEffect(() => {
     const token = localStorage.getItem('access_token');
-    if (!token) return;
+    if (!token || !hasInternet) {
+      setIsWsOpen(false);
+      return;
+    }
 
     const wsUrl = `${API_CONFIG.BASE_URL.replace('http', 'ws')}/ws/chat?token=${token}`;
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
+    let cancelled = false;
+    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+    let activeWs: WebSocket | null = null;
 
-    ws.onopen = () => {
-      setIsConnected(true);
-      console.log('WebSocket connected');
+    const attachHandlers = (ws: WebSocket) => {
+      ws.onopen = () => {
+        if (cancelled || wsRef.current !== ws) return;
+        setIsWsOpen(true);
+      };
+
+      ws.onmessage = (event) => {
+        if (cancelled || wsRef.current !== ws) return;
+        const data = JSON.parse(event.data);
+
+        if (data.type === 'chunk') {
+          setMessages(prev => {
+            const lastMessage = prev[prev.length - 1];
+            if (lastMessage?.role === 'assistant') {
+              return [
+                ...prev.slice(0, -1),
+                { ...lastMessage, content: lastMessage.content + data.content }
+              ];
+            }
+            return prev;
+          });
+        } else if (data.type === 'done') {
+          setIsTyping(false);
+          const assistantMessage: ChatMessage = {
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: data.complete_response,
+            timestamp: new Date(),
+          };
+          setMessages(prev => [...prev, assistantMessage]);
+        } else if (data.type === 'error') {
+          console.error('WebSocket error:', data.content);
+          setIsTyping(false);
+        }
+      };
+
+      ws.onerror = () => {
+        if (cancelled || wsRef.current !== ws) return;
+        setIsWsOpen(false);
+      };
+
+      ws.onclose = () => {
+        if (cancelled) return;
+        if (wsRef.current === ws) {
+          wsRef.current = null;
+          setIsWsOpen(false);
+        }
+        if (!cancelled && hasInternetRef.current) {
+          reconnectTimer = setTimeout(connect, WS_RECONNECT_MS);
+        }
+      };
     };
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      
-      if (data.type === 'chunk') {
-        // Streaming response
-        setMessages(prev => {
-          const lastMessage = prev[prev.length - 1];
-          if (lastMessage?.role === 'assistant') {
-            return [
-              ...prev.slice(0, -1),
-              { ...lastMessage, content: lastMessage.content + data.content }
-            ];
-          }
-          return prev;
-        });
-      } else if (data.type === 'done') {
-        // Complete response
-        setIsTyping(false);
-        const assistantMessage: ChatMessage = {
-          id: Date.now().toString(),
-          role: 'assistant',
-          content: data.complete_response,
-          timestamp: new Date(),
-        };
-        setMessages(prev => [...prev, assistantMessage]);
-      } else if (data.type === 'error') {
-        console.error('WebSocket error:', data.content);
-        setIsTyping(false);
-      }
+    const connect = () => {
+      if (cancelled || !hasInternetRef.current) return;
+
+      activeWs?.close();
+      const ws = new WebSocket(wsUrl);
+      activeWs = ws;
+      wsRef.current = ws;
+      setIsWsOpen(false);
+      attachHandlers(ws);
     };
 
-    ws.onerror = (error) => {
-      // Only log error if this is still the current active connection
-      if (wsRef.current === ws) {
-        console.error('WebSocket error:', error);
-        setIsConnected(false);
-      }
-    };
-
-    ws.onclose = () => {
-      // Only update state if this is still the current active connection
-      if (wsRef.current === ws) {
-        setIsConnected(false);
-        console.log('WebSocket disconnected');
-      }
-    };
+    connect();
 
     return () => {
-      // Clear the ref before closing to prevent error/close handlers from firing
+      cancelled = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
       wsRef.current = null;
-      ws.close();
+      activeWs?.close();
+      activeWs = null;
+      setIsWsOpen(false);
     };
-  }, [user]);
+  }, [user, hasInternet]);
 
   const handleSend = async () => {
-    if (!input.trim() || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    if (!input.trim() || !canSend || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -161,16 +196,16 @@ export function ChatPage() {
               <p className="text-gray-500 mt-1">Message your health companion</p>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
-            <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-            {isConnected ? 'Online' : 'Offline'}
-          </div>
+          <ConnectionStatusBadge isOnline={hasInternet} />
         </div>
       </header>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-6 pb-20">
         <div className="max-w-2xl mx-auto space-y-4">
+          <div className="md:hidden flex justify-end">
+            <ConnectionStatusBadge isOnline={hasInternet} />
+          </div>
           <AnimatePresence initial={false}>
             {messages.map((message) => (
               <motion.div
@@ -260,7 +295,7 @@ export function ChatPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleSend}
-              disabled={!input.trim()}
+              disabled={!input.trim() || !canSend}
               className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
                 input.trim()
                   ? 'bg-[#6F42C1] text-white shadow-md shadow-[#6F42C1]/30'

@@ -1,23 +1,37 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Lock, 
-  Volume2, 
-  LogOut, 
-  ChevronRight,
+import {
+  Lock,
+  Volume2,
+  LogOut,
   Play,
   Check,
   Eye,
   EyeOff,
   X,
   Settings,
-  Building2
+  Building2,
+  Bell,
+  Mail,
+  Sun,
+  Moon,
+  Monitor,
+  History,
+  Cloud,
+  Phone,
+  FileText,
+  Info,
+  Trash2,
 } from 'lucide-react';
 import { Card, CardContent, Button, Input, Badge } from '../components/ui';
+import { SettingsSection } from '../components/settings/SettingsSection';
+import { SettingsRow } from '../components/settings/SettingsRow';
+import { SettingsToggleRow } from '../components/settings/SettingsToggleRow';
+import { MedicalDisclaimer } from '../components/settings/MedicalDisclaimer';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useOrganization } from '../contexts/OrganizationContext';
-import { changePassword } from '../services/authService';
+import { changePassword, deleteAccount } from '../services/authService';
 import {
   getVoiceSample,
   getVoiceModels,
@@ -26,6 +40,9 @@ import {
   updateUserVoiceModel,
 } from '../services/voiceService';
 import type { VoiceModel } from '../types';
+
+type ThemeMode = 'light' | 'dark' | 'system';
+const THEME_STORAGE_KEY = 'caircompanion-theme';
 
 const container = {
   hidden: { opacity: 0 },
@@ -54,6 +71,26 @@ export function SettingsPage() {
   const [isLoadingVoice, setIsLoadingVoice] = useState<string | null>(null);
   const [isSavingVoice, setIsSavingVoice] = useState(false);
   const [voiceSaveError, setVoiceSaveError] = useState('');
+  const [pushNotifications, setPushNotifications] = useState(true);
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
+    const stored = localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
+    return 'system';
+  });
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [wipeOutCompletely, setWipeOutCompletely] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [deleteAccountError, setDeleteAccountError] = useState('');
+
+  useEffect(() => {
+    localStorage.setItem(THEME_STORAGE_KEY, themeMode);
+    const root = document.documentElement;
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const useDark = themeMode === 'dark' || (themeMode === 'system' && prefersDark);
+    root.classList.toggle('dark', useDark);
+  }, [themeMode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -194,6 +231,20 @@ export function SettingsPage() {
     setVoiceSaveError('');
   };
 
+  const handleDeleteAccount = async () => {
+    setIsDeletingAccount(true);
+    setDeleteAccountError('');
+    try {
+      await deleteAccount(wipeOutCompletely);
+      setShowDeleteDialog(false);
+      logout();
+    } catch {
+      setDeleteAccountError('Failed to delete account. Please try again.');
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
+
   const confirmVoiceSelection = async () => {
     if (!pendingVoice || pendingVoice === savedVoice || isSavingVoice) return;
 
@@ -239,14 +290,13 @@ export function SettingsPage() {
           animate="show"
           className="space-y-6"
         >
-          {/* Profile Section */}
           <motion.div variants={item}>
-            <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Account</h2>
             <Card>
               <CardContent>
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#6F42C1] to-[#8b5cf6] flex items-center justify-center text-white text-xl font-bold">
-                    {user?.first_name?.[0]}{user?.last_name?.[0]}
+                    {user?.first_name?.[0]}
+                    {user?.last_name?.[0]}
                   </div>
                   <div>
                     <p className="font-semibold text-gray-900 text-lg">
@@ -259,79 +309,262 @@ export function SettingsPage() {
             </Card>
           </motion.div>
 
-          {/* Settings Options */}
           <motion.div variants={item}>
-            <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Preferences</h2>
             <Card>
               <CardContent className="p-0">
-                <button
+                <SettingsRow
+                  icon={Lock}
+                  title="Change Password"
+                  subtitle="Update your account password"
+                  iconClassName="bg-blue-100 text-blue-600"
                   onClick={() => setShowPasswordModal(true)}
-                  className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors border-b border-gray-100"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                    <Lock className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="font-medium text-gray-900">Change Password</p>
-                    <p className="text-sm text-gray-500">Update your account password</p>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
-                </button>
-
-                <button
-                  onClick={openVoiceModal}
-                  className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors border-b border-gray-100"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                    <Volume2 className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="font-medium text-gray-900">Voice Model</p>
-                    <p className="text-sm text-gray-500">
-                      {voiceModels.find(v => v.model === savedVoice)?.name || 'Vesta'}
-                    </p>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
-                </button>
-
-                <button
-                  onClick={() => navigate('/organizations')}
-                  className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                    <Building2 className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="font-medium text-gray-900">Organizations</p>
-                    <p className="text-sm text-gray-500">
-                      {selectedOrganization?.name || 'Manage your organizations'}
-                    </p>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
-                </button>
+                />
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* Logout */}
           <motion.div variants={item}>
-            <Button
-              variant="danger"
-              className="w-full"
-              onClick={logout}
-            >
+            <SettingsSection title="Appearance">
+              <ThemeOption
+                icon={Sun}
+                label="Light"
+                selected={themeMode === 'light'}
+                onSelect={() => setThemeMode('light')}
+              />
+              <ThemeOption
+                icon={Moon}
+                label="Dark"
+                selected={themeMode === 'dark'}
+                onSelect={() => setThemeMode('dark')}
+              />
+              <ThemeOption
+                icon={Monitor}
+                label="System"
+                selected={themeMode === 'system'}
+                onSelect={() => setThemeMode('system')}
+              />
+            </SettingsSection>
+          </motion.div>
+
+          <motion.div variants={item}>
+            <SettingsSection title="Notifications">
+              <SettingsToggleRow
+                icon={Bell}
+                title="Push Notifications"
+                enabled={pushNotifications}
+                onChange={setPushNotifications}
+                iconClassName="bg-amber-100 text-amber-700"
+              />
+              <SettingsToggleRow
+                icon={Mail}
+                title="Email Notifications"
+                enabled={emailNotifications}
+                onChange={setEmailNotifications}
+                iconClassName="bg-sky-100 text-sky-700"
+              />
+            </SettingsSection>
+          </motion.div>
+
+          <motion.div variants={item}>
+            <SettingsSection title="Voice">
+              <SettingsRow
+                icon={Volume2}
+                title="Assistant Voice"
+                subtitle={voiceModels.find((v) => v.model === savedVoice)?.name || 'Vesta'}
+                iconClassName="bg-purple-100 text-purple-600"
+                onClick={openVoiceModal}
+              />
+            </SettingsSection>
+          </motion.div>
+
+          <motion.div variants={item}>
+            <SettingsSection title="Organization">
+              <SettingsRow
+                icon={Building2}
+                title="Organizations"
+                subtitle={selectedOrganization?.name || 'Manage your organizations'}
+                iconClassName="bg-green-100 text-green-600"
+                onClick={() => navigate('/organizations')}
+              />
+            </SettingsSection>
+          </motion.div>
+
+          <motion.div variants={item}>
+            <SettingsSection title="Access data">
+              <SettingsRow
+                icon={History}
+                title="Access Data"
+                subtitle="Who accessed your data"
+                iconClassName="bg-gray-100 text-gray-700"
+                onClick={() => window.alert('Access history is coming soon to the web app.')}
+              />
+            </SettingsSection>
+          </motion.div>
+
+          <motion.div variants={item}>
+            <SettingsSection title="Connect services">
+              <SettingsRow
+                icon={Cloud}
+                title="Connect Services"
+                subtitle="Sync your EHR data"
+                iconClassName="bg-indigo-100 text-indigo-600"
+                onClick={() => navigate('/connectors')}
+              />
+            </SettingsSection>
+          </motion.div>
+
+          <motion.div variants={item}>
+            <SettingsSection title="Notifications & contact">
+              <SettingsRow
+                icon={Phone}
+                title="Notifications & Contact"
+                subtitle="Manage how we reach you"
+                iconClassName="bg-teal-100 text-teal-700"
+                onClick={() => window.alert('Notification preferences are coming soon to the web app.')}
+              />
+            </SettingsSection>
+          </motion.div>
+
+          <motion.div variants={item}>
+            <SettingsSection title="Privacy">
+              <SettingsRow
+                icon={Lock}
+                title="Data Sharing"
+                subtitle="Control what health data is shared"
+                iconClassName="bg-rose-100 text-rose-700"
+                onClick={() => window.alert('Data sharing controls are coming soon to the web app.')}
+              />
+            </SettingsSection>
+          </motion.div>
+
+          <motion.div variants={item}>
+            <SettingsSection title="About">
+              <SettingsRow
+                icon={Info}
+                title="Version"
+                subtitle="1.0.0"
+                iconClassName="bg-gray-100 text-gray-700"
+                showChevron={false}
+              />
+              <SettingsRow
+                icon={FileText}
+                title="Privacy Policy"
+                iconClassName="bg-gray-100 text-gray-700"
+                onClick={() => window.open('https://cairiq.com/privacy', '_blank', 'noopener,noreferrer')}
+              />
+              <SettingsRow
+                icon={FileText}
+                title="Terms of Service"
+                iconClassName="bg-gray-100 text-gray-700"
+                onClick={() => window.open('https://cairiq.com/terms', '_blank', 'noopener,noreferrer')}
+              />
+            </SettingsSection>
+          </motion.div>
+
+          <motion.div variants={item}>
+            <MedicalDisclaimer />
+          </motion.div>
+
+          <motion.div variants={item} className="space-y-3">
+            <Button variant="danger" className="w-full" onClick={() => setShowLogoutDialog(true)}>
               <LogOut className="w-5 h-5 mr-2" />
               Logout
             </Button>
+            <Button
+              variant="outline"
+              className="w-full border-red-300 text-red-600 hover:bg-red-50"
+              onClick={() => {
+                setWipeOutCompletely(false);
+                setDeleteAccountError('');
+                setShowDeleteDialog(true);
+              }}
+            >
+              <Trash2 className="w-5 h-5 mr-2" />
+              Delete Account
+            </Button>
           </motion.div>
 
-          {/* App Info */}
-          <motion.div variants={item} className="text-center text-sm text-gray-400 pt-4">
-            <p>CairCompanion v1.0.0</p>
-            <p className="mt-1">© 2024 CairCompanion. All rights reserved.</p>
+          <motion.div variants={item} className="text-center text-sm text-gray-400 pt-2 pb-6">
+            <p>© {new Date().getFullYear()} CairCompanion. All rights reserved.</p>
           </motion.div>
         </motion.div>
       </main>
+
+      {showLogoutDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Logout</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to logout?</p>
+            <div className="flex gap-3">
+              <Button variant="secondary" className="flex-1" onClick={() => setShowLogoutDialog(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                className="flex-1"
+                onClick={() => {
+                  setShowLogoutDialog(false);
+                  logout();
+                }}
+              >
+                Logout
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+            <h3 className="text-lg font-bold text-red-600 mb-2">Delete Account</h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to delete this account? This action cannot be undone.
+            </p>
+            <label className="flex items-start gap-3 mb-4 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={wipeOutCompletely}
+                disabled={isDeletingAccount}
+                onChange={(e) => setWipeOutCompletely(e.target.checked)}
+                className="mt-1"
+              />
+              <span className="text-sm text-gray-800">Permanently wipe out all data</span>
+            </label>
+            {wipeOutCompletely && (
+              <p className="text-xs text-red-600 font-medium mb-4">
+                This will permanently remove all your data from our servers. Recovery will be impossible.
+              </p>
+            )}
+            {deleteAccountError && (
+              <div className="p-3 rounded-xl bg-red-50 text-red-600 text-sm mb-4">{deleteAccountError}</div>
+            )}
+            <div className="flex gap-3">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                disabled={isDeletingAccount}
+                onClick={() => {
+                  if (!isDeletingAccount) {
+                    setShowDeleteDialog(false);
+                    setWipeOutCompletely(false);
+                  }
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                className="flex-1"
+                isLoading={isDeletingAccount}
+                onClick={handleDeleteAccount}
+              >
+                {wipeOutCompletely ? 'Wipe Out Account' : 'Delete Account'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Change Password Modal */}
       <AnimatePresence>
@@ -551,5 +784,29 @@ export function SettingsPage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function ThemeOption({
+  icon: Icon,
+  label,
+  selected,
+  onSelect,
+}: {
+  icon: typeof Sun;
+  label: string;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors text-left"
+    >
+      <Icon className="w-5 h-5 text-gray-700" />
+      <span className="flex-1 font-medium text-gray-900">{label}</span>
+      {selected ? <Check className="w-5 h-5 text-[#6F42C1]" /> : null}
+    </button>
   );
 }

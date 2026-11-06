@@ -18,6 +18,8 @@ import {
   Settings,
   Mic,
   Activity,
+  BarChart3,
+  TrendingUp,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -39,7 +41,9 @@ export type AppDestination =
   | 'connect-to-cairgiver'
   | 'organizations'
   | 'settings'
-  | 'trackers';
+  | 'trackers'
+  | 'health-score'
+  | 'progress';
 
 export interface MenuItem {
   name: string;
@@ -54,6 +58,8 @@ export const drawerMenuItems: MenuItem[] = [
   { name: 'Dashboard', icon: LayoutDashboard, destination: 'dashboard', path: '/dashboard' },
   { name: 'Health Data', icon: HeartPulse, destination: 'health-data', path: '/health-data' },
   { name: 'Health Trackers', icon: Activity, destination: 'trackers', path: '/trackers' },
+  { name: 'Health Score', icon: BarChart3, destination: 'health-score', path: '/health-score' },
+  { name: 'Progress', icon: TrendingUp, destination: 'progress', path: '/progress' },
   { name: 'Alerts', icon: Bell, destination: 'alerts', path: '/alerts' },
   { name: 'Care steps', icon: ListChecks, destination: 'care-steps', path: '/care-steps' },
   { name: 'Care notes', icon: ClipboardList, destination: 'care-notes', path: '/care-notes' },
@@ -96,6 +102,8 @@ export const pageTitles: Record<string, string> = {
   '/organizations': 'Organizations',
   '/settings': 'Settings',
   '/trackers': 'Health Trackers',
+  '/health-score': 'Health Score',
+  '/progress': "Today's Progress",
   '/organization-settings': 'Organizations',
 };
 
