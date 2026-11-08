@@ -30,8 +30,9 @@ export function OrganizationSelectionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#6F42C1]/5 via-white to-[#8b5cf6]/5 flex flex-col">
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
+    <div className="h-full min-h-0 flex flex-col overflow-hidden bg-gradient-to-br from-[#6F42C1]/5 via-white to-[#8b5cf6]/5">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain">
+        <div className="flex min-h-full flex-col items-center justify-center px-4 py-8 pb-safe">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -117,30 +118,30 @@ export function OrganizationSelectionPage() {
             )}
           </motion.div>
         </motion.div>
-      </div>
 
-      {/* Install PWA Button */}
-      {isInstallable && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="px-4 pb-4 w-full max-w-md mx-auto"
-        >
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={install}
+        {/* Install PWA Button */}
+        {isInstallable && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mt-6 w-full max-w-md"
           >
-            <Download className="w-5 h-5 mr-2" />
-            Install App
-          </Button>
-        </motion.div>
-      )}
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={install}
+            >
+              <Download className="w-5 h-5 mr-2" />
+              Install App
+            </Button>
+          </motion.div>
+        )}
 
-      {/* Footer */}
-      <div className="text-center py-4 text-sm text-gray-500">
-        © 2024 CairCompanion. All rights reserved.
+        <div className="mt-6 text-center py-4 text-sm text-gray-500">
+          © 2024 CairCompanion. All rights reserved.
+        </div>
+        </div>
       </div>
 
       {/* Install Instructions Modal */}

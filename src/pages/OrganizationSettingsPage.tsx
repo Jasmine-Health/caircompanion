@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, Button, Badge } from '../components/ui';
 import { useOrganization } from '../contexts/OrganizationContext';
+import { formatApiError, type FeedbackMessage } from '../lib/apiFeedback';
 
 const container = {
   hidden: { opacity: 0 },
@@ -37,6 +38,10 @@ export function OrganizationSettingsPage() {
   const [showUnenrollModal, setShowUnenrollModal] = useState(false);
   const [selectedOrgToUnenroll, setSelectedOrgToUnenroll] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [enrollError, setEnrollError] = useState<string | null>(null);
+  const [unenrollError, setUnenrollError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackMessage | null>(null);
+  const [switchingOrgId, setSwitchingOrgId] = useState<string | null>(null);
 
   const enrolledOrgIds = userOrganizations.map(uo => uo.organization.id);
   const unenrolledOrganizations = availableOrganizations.filter(
@@ -45,21 +50,68 @@ export function OrganizationSettingsPage() {
 
   const handleEnroll = async (orgId: string) => {
     setIsProcessing(true);
-    await enrollInOrganization(orgId);
-    setIsProcessing(false);
-    setShowEnrollModal(false);
+    setEnrollError(null);
+    try {
+      const response = await enrollInOrganization(orgId);
+      setShowEnrollModal(false);
+      setFeedback({
+        type: 'success',
+        text: response.message?.trim() || `Enrolled in ${response.organization_name}.`,
+      });
+    } catch (error) {
+      console.error(error);
+      setEnrollError(formatApiError(error, 'Could not enroll in this organization. Please try again.'));
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleUnenroll = async () => {
     if (!selectedOrgToUnenroll) return;
     setIsProcessing(true);
-    await unenrollFromOrganization(selectedOrgToUnenroll);
-    setIsProcessing(false);
-    setShowUnenrollModal(false);
-    setSelectedOrgToUnenroll(null);
+    setUnenrollError(null);
+    try {
+      const response = await unenrollFromOrganization(selectedOrgToUnenroll);
+      setShowUnenrollModal(false);
+      setSelectedOrgToUnenroll(null);
+      setFeedback({
+        type: 'success',
+        text: response.message?.trim() || 'You have been unenrolled from this organization.',
+      });
+    } catch (error) {
+      console.error(error);
+      setUnenrollError(formatApiError(error, 'Could not unenroll. Please try again.'));
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSwitch = async (orgId: string) => {
+    setSwitchingOrgId(orgId);
+    try {
+      const response = await switchOrganization(orgId);
+      setFeedback({
+        type: 'success',
+        text: response.message?.trim() || `Switched to ${response.name}.`,
+      });
+    } catch (error) {
+      console.error(error);
+      setFeedback({
+        type: 'error',
+        text: formatApiError(error, 'Could not switch organization. Please try again.'),
+      });
+    } finally {
+      setSwitchingOrgId(null);
+    }
+  };
+
+  const openEnrollModal = () => {
+    setEnrollError(null);
+    setShowEnrollModal(true);
   };
 
   const openUnenrollModal = (orgId: string) => {
+    setUnenrollError(null);
     setSelectedOrgToUnenroll(orgId);
     setShowUnenrollModal(true);
   };
@@ -79,7 +131,7 @@ export function OrganizationSettingsPage() {
             </div>
           </div>
           {unenrolledOrganizations.length > 0 ? (
-            <Button onClick={() => setShowEnrollModal(true)}>
+            <Button onClick={openEnrollModal}>
               <Plus className="w-4 h-4 mr-2" />
               Enroll
             </Button>
@@ -93,13 +145,29 @@ export function OrganizationSettingsPage() {
         {/* Mobile enroll button */}
         <div className="md:hidden mb-4">
           {unenrolledOrganizations.length > 0 && (
-            <Button variant="outline" onClick={() => setShowEnrollModal(true)} className="w-full">
+            <Button variant="outline" onClick={openEnrollModal} className="w-full">
               <Plus className="w-4 h-4 mr-2" />
               Enroll in Organization
             </Button>
           )}
         </div>
         
+        {feedback && (
+          <div
+            className={`mb-4 p-3 rounded-xl text-sm border flex gap-3 justify-between items-start ${
+              feedback.type === 'success'
+                ? 'bg-green-50 text-green-800 border-green-100'
+                : 'bg-red-50 text-red-700 border-red-100'
+            }`}
+            role="status"
+          >
+            <span>{feedback.text}</span>
+            <button type="button" onClick={() => setFeedback(null)} aria-label="Dismiss">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         <motion.div
           variants={container}
           initial="hidden"
@@ -179,7 +247,9 @@ export function OrganizationSettingsPage() {
                             <Button
                               variant="secondary"
                               size="sm"
-                              onClick={() => switchOrganization(userOrg.organization.id)}
+                              onClick={() => void handleSwitch(userOrg.organization.id)}
+                              isLoading={switchingOrgId === userOrg.organization.id}
+                              disabled={switchingOrgId !== null}
                             >
                               <ArrowLeftRight className="w-4 h-4 mr-1" />
                               Switch
@@ -199,12 +269,14 @@ export function OrganizationSettingsPage() {
                           <Button
                             variant="secondary"
                             size="sm"
-                            onClick={() => switchOrganization(userOrg.organization.id)}
-                          >
-                            <ArrowLeftRight className="w-4 h-4 mr-1" />
-                            Switch
-                          </Button>
-                        )}
+                            onClick={() => void handleSwitch(userOrg.organization.id)}
+                            isLoading={switchingOrgId === userOrg.organization.id}
+                            disabled={switchingOrgId !== null}
+                            >
+                              <ArrowLeftRight className="w-4 h-4 mr-1" />
+                              Switch
+                            </Button>
+                          )}
                         <button
                           onClick={() => openUnenrollModal(userOrg.organization.id)}
                           className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
@@ -259,6 +331,11 @@ export function OrganizationSettingsPage() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {enrollError && (
+                  <div className="p-3 rounded-xl bg-red-50 text-red-700 text-sm border border-red-100" role="alert">
+                    {enrollError}
+                  </div>
+                )}
                 {unenrolledOrganizations.map((org) => (
                   <motion.button
                     key={org.id}
@@ -317,6 +394,11 @@ export function OrganizationSettingsPage() {
                   </span>
                   ? You can re-enroll at any time.
                 </p>
+                {unenrollError && (
+                  <div className="mb-4 p-3 rounded-xl bg-red-50 text-red-700 text-sm border border-red-100 text-left" role="alert">
+                    {unenrollError}
+                  </div>
+                )}
                 <div className="flex gap-3">
                   <Button
                     variant="secondary"

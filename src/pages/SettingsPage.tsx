@@ -31,6 +31,7 @@ import { MedicalDisclaimer } from '../components/settings/MedicalDisclaimer';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useOrganization } from '../contexts/OrganizationContext';
+import { APIError } from '../config/api';
 import { changePassword, deleteAccount } from '../services/authService';
 import {
   getVoiceSample,
@@ -128,6 +129,13 @@ export function SettingsPage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!passwordSuccess) return;
+    const timer = window.setTimeout(() => setPasswordSuccess(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [passwordSuccess]);
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,13 +154,21 @@ export function SettingsPage() {
     setIsChangingPassword(true);
     
     try {
-      await changePassword({ old_password: oldPassword, new_password: newPassword });
+      const response = await changePassword({ old_password: oldPassword, new_password: newPassword });
+      const successMessage =
+        response.message?.trim() || 'Password changed successfully.';
       setShowPasswordModal(false);
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
+      setPasswordError('');
+      setPasswordSuccess(successMessage);
     } catch (err) {
-      setPasswordError('Failed to change password. Please check your current password and try again.');
+      if (err instanceof APIError) {
+        setPasswordError(err.message || 'Failed to change password. Please try again.');
+      } else {
+        setPasswordError('Failed to change password. Please check your current password and try again.');
+      }
     } finally {
       setIsChangingPassword(false);
     }
@@ -309,6 +325,24 @@ export function SettingsPage() {
             </Card>
           </motion.div>
 
+          {passwordSuccess && (
+            <motion.div
+              variants={item}
+              className="p-4 rounded-xl bg-green-50 text-green-800 text-sm border border-green-100 flex gap-3 justify-between items-start"
+              role="status"
+            >
+              <span>{passwordSuccess}</span>
+              <button
+                type="button"
+                className="shrink-0 text-green-700 hover:text-green-900"
+                onClick={() => setPasswordSuccess(null)}
+                aria-label="Dismiss"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </motion.div>
+          )}
+
           <motion.div variants={item}>
             <Card>
               <CardContent className="p-0">
@@ -317,7 +351,10 @@ export function SettingsPage() {
                   title="Change Password"
                   subtitle="Update your account password"
                   iconClassName="bg-blue-100 text-blue-600"
-                  onClick={() => setShowPasswordModal(true)}
+                  onClick={() => {
+                    setPasswordError('');
+                    setShowPasswordModal(true);
+                  }}
                 />
               </CardContent>
             </Card>

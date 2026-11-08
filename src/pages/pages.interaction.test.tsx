@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '../contexts/AuthContext';
 import { OrganizationProvider } from '../contexts/OrganizationContext';
+import { APIError } from '../config/api';
 import * as authService from '../services/authService';
 import * as healthDataService from '../services/healthDataService';
 import * as connectorService from '../services/connectorService';
@@ -336,6 +337,67 @@ describe('page interactions', () => {
     expect(await screen.findByText('Care Friend')).toBeInTheDocument();
     await user.click(screen.getAllByRole('button', { name: /Invite/i })[0]);
     expect(await screen.findByPlaceholderText('caregiver@example.com')).toBeInTheDocument();
+  });
+
+  it('caregivers invite shows API success and error messages', async () => {
+    const user = userEvent.setup();
+    vi.mocked(cairgiverService.sendPatientRequest).mockResolvedValueOnce({
+      relationship_id: 'rel-new',
+      message: 'Connection request sent to cairgiver new@example.com',
+    });
+
+    renderPage('/caregivers', <CaregiversPage />);
+    await screen.findByText('Care Friend');
+    await user.click(screen.getAllByRole('button', { name: /Invite/i })[0]);
+
+    const inviteHeading = await screen.findByRole('heading', { name: 'Invite Caregiver' });
+    const inviteModal = inviteHeading.closest('div.bg-white') as HTMLElement;
+    const modal = within(inviteModal);
+
+    const emailInput = modal.getByPlaceholderText('caregiver@example.com');
+    await user.clear(emailInput);
+    await user.type(emailInput, 'new@example.com');
+    await user.click(modal.getByRole('button', { name: /Send Invite/i }));
+
+    expect(await screen.findByText(/Connection request sent to cairgiver new@example.com/i)).toBeInTheDocument();
+
+    vi.mocked(cairgiverService.sendPatientRequest).mockRejectedValueOnce(
+      new APIError('Cairgiver not found', 404),
+    );
+
+    await waitFor(() => expect(screen.queryByText(/Invitation sent/i)).not.toBeInTheDocument(), {
+      timeout: 5000,
+    });
+
+    await user.click(screen.getAllByRole('button', { name: /Invite/i })[0]);
+    const retryHeading = await screen.findByRole('heading', { name: 'Invite Caregiver' });
+    const retryModal = within(retryHeading.closest('div.bg-white') as HTMLElement);
+    const retryInput = retryModal.getByPlaceholderText('caregiver@example.com');
+    await user.clear(retryInput);
+    await user.type(retryInput, 'missing@example.com');
+    await user.click(retryModal.getByRole('button', { name: /Send Invite/i }));
+
+    expect(retryModal.getByRole('alert')).toHaveTextContent(/sign up in the CairGiver app/i);
+  });
+
+  it('settings page shows API message after password change', async () => {
+    const user = userEvent.setup();
+    vi.mocked(authService.changePassword).mockResolvedValueOnce({
+      message: 'Password changed successfully.',
+      success: true,
+    });
+    renderPage('/settings', <SettingsPage />);
+    await user.click(screen.getByRole('button', { name: /Change Password/i }));
+    const modal = screen.getByRole('heading', { name: 'Change Password' }).closest('div.bg-white') as HTMLElement;
+    const inputs = modal.querySelectorAll('input');
+    await user.type(inputs[0], 'old-pass');
+    await user.type(inputs[1], 'new-pass12');
+    await user.type(inputs[2], 'new-pass12');
+    await user.click(within(modal).getByRole('button', { name: /^Update Password$/i }));
+    await waitFor(() => {
+      expect(screen.queryByRole('heading', { name: 'Change Password' })).not.toBeInTheDocument();
+    });
+    expect(await screen.findByText(/Password changed successfully/i)).toBeInTheDocument();
   });
 
   it('settings page opens password and voice preferences', async () => {

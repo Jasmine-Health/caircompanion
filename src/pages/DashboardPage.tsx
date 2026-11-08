@@ -16,8 +16,10 @@ import {
   MoreVertical,
   RotateCcw,
   Stethoscope,
-  MessageSquareText
+  MessageSquareText,
+  X,
 } from 'lucide-react';
+import { formatApiError, type FeedbackMessage } from '../lib/apiFeedback';
 import { Badge } from '../components/ui';
 import { CarePlanDetailModal } from '../components/CarePlanDetailModal';
 import { getDailySummary, getAlerts, completeAlert, snoozeAlert, getCareTeamNotes, type DailySummary, type Alert, type CareTeamNotes } from '../services/healthDataService';
@@ -55,6 +57,8 @@ export function DashboardPage() {
   const [selectedPlanName, setSelectedPlanName] = useState<string | undefined>(undefined);
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
   const [processingAlertId, setProcessingAlertId] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackMessage | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -96,8 +100,16 @@ export function DashboardPage() {
           : (a.completed_dates || []).filter(d => d !== today);
         return { ...a, is_completed_today: completed, completed_dates: dates };
       }));
+      setFeedback({
+        type: 'success',
+        text: completed ? 'Task marked complete.' : 'Task marked incomplete.',
+      });
     } catch (error) {
       console.error('Failed to update alert:', error);
+      setFeedback({
+        type: 'error',
+        text: formatApiError(error, completed ? 'Could not complete this task.' : 'Could not undo this task.'),
+      });
     } finally {
       setProcessingAlertId(null);
     }
@@ -111,8 +123,16 @@ export function DashboardPage() {
       setAlerts(prev => prev.map(a => 
         a.id === alertId ? { ...a, snoozed_until: result.snoozed_until } : a
       ));
+      setFeedback({
+        type: 'success',
+        text: `Snoozed for ${minutes} minutes.`,
+      });
     } catch (error) {
       console.error('Failed to snooze alert:', error);
+      setFeedback({
+        type: 'error',
+        text: formatApiError(error, 'Could not snooze this task.'),
+      });
     } finally {
       setProcessingAlertId(null);
     }
@@ -120,6 +140,7 @@ export function DashboardPage() {
 
   useEffect(() => {
     const loadData = async () => {
+      setLoadError(null);
       try {
         const today = new Date().toISOString().split('T')[0];
         const [summaryData, alertsData, careNotesData] = await Promise.all([
@@ -132,6 +153,7 @@ export function DashboardPage() {
         setCareNotes(careNotesData);
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
+        setLoadError(formatApiError(error, 'Could not load dashboard data. Pull to refresh or try again later.'));
       } finally {
         setIsLoading(false);
       }
@@ -181,6 +203,34 @@ export function DashboardPage() {
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-sm text-gray-500 mt-1">Your health at a glance</p>
         </div>
+
+        {loadError && (
+          <div
+            className="mb-4 p-3 rounded-xl text-sm border flex gap-3 justify-between items-start bg-red-50 text-red-700 border-red-100"
+            role="alert"
+          >
+            <span>{loadError}</span>
+            <button type="button" onClick={() => setLoadError(null)} aria-label="Dismiss">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {feedback && (
+          <div
+            className={`mb-4 p-3 rounded-xl text-sm border flex gap-3 justify-between items-start ${
+              feedback.type === 'success'
+                ? 'bg-green-50 text-green-800 border-green-100'
+                : 'bg-red-50 text-red-700 border-red-100'
+            }`}
+            role="status"
+          >
+            <span>{feedback.text}</span>
+            <button type="button" onClick={() => setFeedback(null)} aria-label="Dismiss">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         <motion.div
           variants={container}
