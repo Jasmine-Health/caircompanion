@@ -162,7 +162,22 @@ export function useVoiceChat(): UseVoiceChatReturn {
 
   // ── Microphone Capture ──────────────────────────────────────────────────
 
-  const startMicrophone = useCallback(async () => {
+  const microphoneErrorMessage = (err: unknown): string => {
+    if (err instanceof DOMException) {
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        return 'Microphone access was denied. Allow the microphone in your browser settings, then tap the mic to try again.';
+      }
+      if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        return 'No microphone was found on this device.';
+      }
+      if (err.name === 'NotReadableError') {
+        return 'Microphone is in use by another app. Close it and try again.';
+      }
+    }
+    return 'Could not access the microphone. Tap the mic to try again.';
+  };
+
+  const startMicrophone = useCallback(async (): Promise<boolean> => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -197,11 +212,13 @@ export function useVoiceChat(): UseVoiceChatReturn {
       silentGain.gain.value = 0;
       workletNode.connect(silentGain);
       silentGain.connect(audioCtx.destination);
-
+      return true;
     } catch (err) {
       console.error('[MIC] Failed to start microphone:', err);
-      setError('Microphone access denied. Please allow microphone access.');
-      setStatus('error');
+      setError(microphoneErrorMessage(err));
+      const wsOpen = wsRef.current?.readyState === WebSocket.OPEN;
+      setStatus(wsOpen ? 'ready' : 'error');
+      return false;
     }
   }, []);
 
@@ -257,6 +274,7 @@ export function useVoiceChat(): UseVoiceChatReturn {
         switch (msg.type) {
           case 'ready':
             console.log('[WS] Voice assistant ready');
+            setError(null);
             setStatus('ready');
             if (pendingStartRef.current && !isConversationActiveRef.current) {
               pendingStartRef.current = false;
@@ -381,7 +399,19 @@ export function useVoiceChat(): UseVoiceChatReturn {
     setTranscript('');
     setTranscriptSpeaker(null);
 
-    await startMicrophone();
+    const micReady = await startMicrophone();
+    if (!micReady) {
+      isConversationActiveRef.current = false;
+      const ws = wsRef.current;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(JSON.stringify({ type: 'CloseStream' }));
+        } catch {
+          // ignore
+        }
+      }
+      return;
+    }
 
     const pCtx = getPlaybackContext();
     if (pCtx.state === 'suspended') {

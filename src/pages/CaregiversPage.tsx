@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, Button, Input, Avatar, Badge } from '../components/ui';
 import { getCairgivers, getPendingRequests, approveRequest, sendPatientRequest, removeCairgiverConnection, type Cairgiver, type PendingRequest } from '../services/cairgiverService';
+import { APIError } from '../config/api';
+import { formatCaregiverInviteError, formatCaregiverInviteSuccess } from '../lib/caregiverInviteMessages';
 
 const container = {
   hidden: { opacity: 0 },
@@ -35,9 +37,20 @@ export function CaregiversPage() {
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [removeConfirm, setRemoveConfirm] = useState<Cairgiver | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const openInviteForm = () => {
+    setInviteError(null);
+    setShowSuccess(false);
+    setSuccessMessage('');
+    setShowInviteForm(true);
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -50,6 +63,11 @@ export function CaregiversPage() {
         setPendingRequests(pendingData);
       } catch (error) {
         console.error('Failed to load caregivers data:', error);
+        setLoadError(
+          error instanceof APIError
+            ? error.message
+            : 'Could not load caregivers. Pull to refresh or try again later.',
+        );
       } finally {
         setIsLoading(false);
       }
@@ -60,19 +78,29 @@ export function CaregiversPage() {
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setInviteError('Enter the caregiver’s email address.');
+      return;
+    }
+
     setIsSubmitting(true);
-    
+    setInviteError(null);
+
     try {
-      await sendPatientRequest(email);
+      const response = await sendPatientRequest(trimmed);
+      setSuccessMessage(formatCaregiverInviteSuccess(response, trimmed));
       setShowSuccess(true);
       setEmail('');
-      
+
       setTimeout(() => {
         setShowSuccess(false);
+        setSuccessMessage('');
         setShowInviteForm(false);
-      }, 2000);
+      }, 3500);
     } catch (error) {
       console.error('Failed to send invitation:', error);
+      setInviteError(formatCaregiverInviteError(error));
     } finally {
       setIsSubmitting(false);
     }
@@ -87,6 +115,9 @@ export function CaregiversPage() {
       setCaregivers(caregiversData);
     } catch (error) {
       console.error('Failed to approve request:', error);
+      setActionError(
+        error instanceof APIError ? error.message : 'Could not approve this request. Try again.',
+      );
     }
   };
 
@@ -96,6 +127,9 @@ export function CaregiversPage() {
       setPendingRequests(prev => prev.filter(r => r.relationship_id !== relationshipId));
     } catch (error) {
       console.error('Failed to reject request:', error);
+      setActionError(
+        error instanceof APIError ? error.message : 'Could not decline this request. Try again.',
+      );
     }
   };
 
@@ -109,6 +143,9 @@ export function CaregiversPage() {
       setRemoveConfirm(null);
     } catch (error) {
       console.error('Failed to remove caregiver:', error);
+      setActionError(
+        error instanceof APIError ? error.message : 'Could not remove this caregiver. Try again.',
+      );
     } finally {
       setIsRemoving(false);
     }
@@ -136,7 +173,7 @@ export function CaregiversPage() {
               <p className="text-gray-500 mt-1">Manage your care team</p>
             </div>
           </div>
-          <Button onClick={() => setShowInviteForm(true)}>
+          <Button onClick={openInviteForm}>
             <UserPlus className="w-4 h-4 mr-2" />
             Invite
           </Button>
@@ -151,7 +188,13 @@ export function CaregiversPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4"
-            onClick={() => !isSubmitting && setShowInviteForm(false)}
+            onClick={() => {
+              if (!isSubmitting) {
+                setShowInviteForm(false);
+                setInviteError(null);
+                setShowSuccess(false);
+              }
+            }}
           >
             <motion.div
               initial={{ y: 100, opacity: 0 }}
@@ -170,8 +213,8 @@ export function CaregiversPage() {
                   >
                     <CheckCircle2 className="w-8 h-8 text-green-600" />
                   </motion.div>
-                  <h3 className="text-lg font-semibold text-gray-900">Invitation Sent!</h3>
-                  <p className="text-gray-500 mt-1">They'll receive an email shortly</p>
+                  <h3 className="text-lg font-semibold text-gray-900">Invitation sent</h3>
+                  <p className="text-gray-500 mt-2 text-sm leading-relaxed px-2">{successMessage}</p>
                 </div>
               ) : (
                 <>
@@ -179,12 +222,23 @@ export function CaregiversPage() {
                   <p className="text-gray-500 mb-6">Send an invitation to add a caregiver to your care team</p>
                   
                   <form onSubmit={handleInvite}>
+                    {inviteError && (
+                      <div
+                        className="mb-4 p-3 rounded-xl bg-red-50 text-red-700 text-sm border border-red-100"
+                        role="alert"
+                      >
+                        {inviteError}
+                      </div>
+                    )}
                     <Input
                       label="Email Address"
                       type="email"
                       placeholder="caregiver@example.com"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (inviteError) setInviteError(null);
+                      }}
                       icon={<Mail className="w-5 h-5" />}
                       required
                     />
@@ -270,11 +324,31 @@ export function CaregiversPage() {
       <main className="max-w-2xl mx-auto px-4 py-6">
         {/* Mobile invite button */}
         <div className="md:hidden mb-4">
-          <Button variant="outline" onClick={() => setShowInviteForm(true)} className="w-full">
+          <Button variant="outline" onClick={openInviteForm} className="w-full">
             <UserPlus className="w-4 h-4 mr-2" />
             Invite Caregiver
           </Button>
         </div>
+
+        {loadError && (
+          <div className="mb-4 p-3 rounded-xl bg-red-50 text-red-700 text-sm border border-red-100" role="alert">
+            {loadError}
+          </div>
+        )}
+
+        {actionError && (
+          <div className="mb-4 p-3 rounded-xl bg-amber-50 text-amber-900 text-sm border border-amber-100 flex gap-2 justify-between items-start">
+            <span>{actionError}</span>
+            <button
+              type="button"
+              className="text-amber-700 hover:text-amber-900 shrink-0"
+              onClick={() => setActionError(null)}
+              aria-label="Dismiss"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
         
         <motion.div
           variants={container}
@@ -349,7 +423,7 @@ export function CaregiversPage() {
                   <p className="text-sm text-gray-500 mb-4">
                     Invite family members or caregivers to join your care team
                   </p>
-                  <Button onClick={() => setShowInviteForm(true)}>
+                  <Button onClick={openInviteForm}>
                     <UserPlus className="w-4 h-4 mr-2" />
                     Invite Caregiver
                   </Button>

@@ -147,6 +147,39 @@ describe('useVoiceChat', () => {
     expect(result.current.status).toBe('disconnected');
   });
 
+  it('keeps mic button usable after permission denial', async () => {
+    const getUserMedia = vi.fn().mockRejectedValue(new DOMException('Permission denied', 'NotAllowedError'));
+    Object.defineProperty(globalThis.navigator, 'mediaDevices', {
+      configurable: true,
+      value: { getUserMedia },
+    });
+
+    const { result } = renderHook(() => useVoiceChat());
+    act(() => {
+      latestSocket?.onmessage?.({ data: JSON.stringify({ type: 'ready' }) } as MessageEvent);
+    });
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+
+    await act(async () => {
+      await result.current.startConversation();
+    });
+
+    expect(result.current.status).toBe('ready');
+    expect(result.current.error).toMatch(/denied/i);
+    expect(latestSocket?.send).not.toHaveBeenCalledWith(expect.stringContaining('StartRecording'));
+
+    getUserMedia.mockResolvedValueOnce({
+      getTracks: () => [{ stop: vi.fn() }],
+    });
+
+    await act(async () => {
+      await result.current.startConversation();
+    });
+
+    expect(getUserMedia).toHaveBeenCalledTimes(2);
+    expect(result.current.error).toBeNull();
+  });
+
   it('stopConversation closes active websocket', async () => {
     const { result } = renderHook(() => useVoiceChat());
     act(() => {

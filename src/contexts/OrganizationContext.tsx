@@ -1,7 +1,16 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { Organization, UserOrganization } from '../types';
 import { DEFAULT_ORGANIZATION_NAME, findOrganizationByName } from '../config/organization';
-import { getOrganizations, getMyEnrollments, switchOrganization as switchOrgAPI, enrollInOrganization as enrollOrgAPI, unenrollFromOrganization as unenrollOrgAPI, getCurrentOrganization } from '../services/organizationService';
+import {
+  getOrganizations,
+  getMyEnrollments,
+  switchOrganization as switchOrgAPI,
+  enrollInOrganization as enrollOrgAPI,
+  unenrollFromOrganization as unenrollOrgAPI,
+  getCurrentOrganization,
+  type EnrollmentResponse,
+  type SwitchOrganizationResponse,
+} from '../services/organizationService';
 import { SESSION_DATA_CLEARED_EVENT } from '../lib/sessionCleanup';
 
 interface OrganizationContextType {
@@ -10,9 +19,9 @@ interface OrganizationContextType {
   availableOrganizations: Organization[];
   isLoading: boolean;
   selectOrganization: (org: Organization) => void;
-  switchOrganization: (orgId: string) => void;
-  enrollInOrganization: (orgId: string) => Promise<void>;
-  unenrollFromOrganization: (orgId: string) => Promise<void>;
+  switchOrganization: (orgId: string) => Promise<SwitchOrganizationResponse>;
+  enrollInOrganization: (orgId: string) => Promise<EnrollmentResponse>;
+  unenrollFromOrganization: (orgId: string) => Promise<{ message: string; success: boolean }>;
   clearSelectedOrganization: () => void;
 }
 
@@ -107,10 +116,11 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     };
     setSelectedOrganization(org);
     localStorage.setItem('selectedOrganization', JSON.stringify(org));
+    return response;
   };
 
   const enrollInOrganization = async (orgId: string) => {
-    await enrollOrgAPI(orgId);
+    const response = await enrollOrgAPI(orgId);
     // Reload enrollments after successful enrollment
     const enrollmentsResponse = await getMyEnrollments();
     const userOrgs: UserOrganization[] = enrollmentsResponse.enrollments.map(enrollment => ({
@@ -123,10 +133,11 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       isActive: false,
     }));
     setUserOrganizations(userOrgs);
+    return response;
   };
 
   const unenrollFromOrganization = async (orgId: string) => {
-    await unenrollOrgAPI(orgId);
+    const response = await unenrollOrgAPI(orgId);
     // Reload enrollments after successful unenrollment
     const enrollmentsResponse = await getMyEnrollments();
     const userOrgs: UserOrganization[] = enrollmentsResponse.enrollments.map(enrollment => ({
@@ -154,6 +165,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       setSelectedOrganization(null);
       localStorage.removeItem('selectedOrganization');
     }
+    return response;
   };
 
   const clearSelectedOrganization = useCallback(() => {

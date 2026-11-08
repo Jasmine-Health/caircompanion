@@ -12,6 +12,7 @@ export interface EnrollmentResponse {
   organization_name: string;
   logo_url?: string;
   enrolled_at: string;
+  message?: string;
 }
 
 export interface SwitchOrganizationResponse {

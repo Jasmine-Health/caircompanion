@@ -25,6 +25,7 @@ import {
   type Alert,
 } from '../services/healthDataService';
 import { formatDate } from '../lib/utils';
+import { formatApiError, type FeedbackMessage } from '../lib/apiFeedback';
 
 const alertFilters = [
   { id: 'all', label: 'All', color: '#6366F1' },
@@ -68,7 +69,8 @@ export function AlertsListPage({
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [snackbar, setSnackbar] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackMessage | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showSnoozeModal, setShowSnoozeModal] = useState<Alert | null>(null);
   const [snoozeMinutes, setSnoozeMinutes] = useState(15);
 
@@ -76,6 +78,7 @@ export function AlertsListPage({
 
   const loadAlerts = useCallback(async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const params: { date: string; is_active: boolean; type?: string } = {
         date: dateString,
@@ -86,6 +89,14 @@ export function AlertsListPage({
       setAlerts(data.alerts);
     } catch (error) {
       console.error('Failed to load alerts:', error);
+      setLoadError(
+        formatApiError(
+          error,
+          alertType === 'appointment'
+            ? 'Could not load appointments. Try another date or try again later.'
+            : 'Could not load alerts. Try another date or try again later.',
+        ),
+      );
     } finally {
       setIsLoading(false);
     }
@@ -120,9 +131,18 @@ export function AlertsListPage({
           return { ...a, is_completed_today: completed, completed_dates: dates };
         })
       );
-      setSnackbar(completed ? 'Alert marked as complete' : 'Alert marked incomplete');
-    } catch {
-      setSnackbar(completed ? 'Failed to complete alert' : 'Failed to undo alert');
+      setFeedback({
+        type: 'success',
+        text: completed ? 'Alert marked as complete.' : 'Alert marked incomplete.',
+      });
+    } catch (error) {
+      setFeedback({
+        type: 'error',
+        text: formatApiError(
+          error,
+          completed ? 'Could not complete this alert.' : 'Could not undo this alert.',
+        ),
+      });
     } finally {
       setProcessingId(null);
     }
@@ -138,9 +158,15 @@ export function AlertsListPage({
           a.id === showSnoozeModal.id ? { ...a, snoozed_until: result.snoozed_until } : a
         )
       );
-      setSnackbar(`Snoozed for ${snoozeMinutes} minutes`);
-    } catch {
-      setSnackbar('Failed to snooze alert');
+      setFeedback({
+        type: 'success',
+        text: `Snoozed for ${snoozeMinutes} minutes.`,
+      });
+    } catch (error) {
+      setFeedback({
+        type: 'error',
+        text: formatApiError(error, 'Could not snooze this alert.'),
+      });
     } finally {
       setProcessingId(null);
       setShowSnoozeModal(null);
@@ -148,11 +174,11 @@ export function AlertsListPage({
   };
 
   useEffect(() => {
-    if (snackbar) {
-      const t = setTimeout(() => setSnackbar(null), 3000);
+    if (feedback) {
+      const t = setTimeout(() => setFeedback(null), 4000);
       return () => clearTimeout(t);
     }
-  }, [snackbar]);
+  }, [feedback]);
 
   const isAppointments = alertType === 'appointment';
   const emptyState = isAppointments
@@ -179,6 +205,15 @@ export function AlertsListPage({
           <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
           <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
         </div>
+
+        {loadError && (
+          <div
+            className="mb-4 p-3 rounded-xl text-sm border bg-red-50 text-red-700 border-red-100"
+            role="alert"
+          >
+            {loadError}
+          </div>
+        )}
 
         <div className="flex items-center justify-between bg-white rounded-xl p-3 mb-4 border border-gray-100">
           <button onClick={() => changeDate(-1)} className="p-2 hover:bg-gray-100 rounded-lg">
@@ -386,14 +421,19 @@ export function AlertsListPage({
       </AnimatePresence>
 
       <AnimatePresence>
-        {snackbar && (
+        {feedback && (
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-24 left-4 right-4 md:bottom-8 md:left-auto md:right-8 md:w-auto bg-gray-900 text-white px-4 py-3 rounded-xl text-sm z-50"
+            className={`fixed bottom-24 left-4 right-4 md:bottom-8 md:left-auto md:right-8 md:max-w-sm px-4 py-3 rounded-xl text-sm z-50 border shadow-lg ${
+              feedback.type === 'success'
+                ? 'bg-green-50 text-green-800 border-green-100'
+                : 'bg-red-50 text-red-700 border-red-100'
+            }`}
+            role="status"
           >
-            {snackbar}
+            {feedback.text}
           </motion.div>
         )}
       </AnimatePresence>
