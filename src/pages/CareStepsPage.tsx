@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight, ListChecks } from 'lucide-react';
+import { Check, ListChecks } from 'lucide-react';
 import { completeCareStep, getCareSteps, type CareStep } from '../services/healthDataService';
 import { formatDate } from '../lib/utils';
 
@@ -60,9 +60,47 @@ function stepTime(value?: string | null): string {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+function sortStepsForDay(a: CareStep, b: CareStep): number {
+  const aOpen = stepIsOpen(a) ? 0 : 1;
+  const bOpen = stepIsOpen(b) ? 0 : 1;
+  if (aOpen !== bOpen) return aOpen - bOpen;
+  const timeA = stepTime(a.due_date) || stepDue(a.due_date);
+  const timeB = stepTime(b.due_date) || stepDue(b.due_date);
+  return timeB.localeCompare(timeA);
+}
+
+export function groupStepsByDate(steps: CareStep[]): { dateKey: string; steps: CareStep[] }[] {
+  const map = new Map<string, CareStep[]>();
+  for (const step of steps) {
+    const key = stepDue(step.due_date) || 'unknown';
+    const bucket = map.get(key) ?? [];
+    bucket.push(step);
+    map.set(key, bucket);
+  }
+  return [...map.entries()]
+    .sort(([a], [b]) => {
+      if (a === 'unknown') return 1;
+      if (b === 'unknown') return -1;
+      return b.localeCompare(a);
+    })
+    .map(([key, daySteps]) => ({
+      dateKey: key,
+      steps: daySteps.slice().sort(sortStepsForDay),
+    }));
+}
+
+export function sectionDateLabel(sectionKey: string, todayKey: string): string {
+  if (sectionKey === 'unknown') return 'No due date';
+  if (sectionKey === todayKey) return 'Today';
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (sectionKey === dateKey(yesterday)) return 'Yesterday';
+  return formatDate(new Date(`${sectionKey}T12:00:00`));
+}
+
 export function CareStepsPage() {
   const [steps, setSteps] = useState<CareStep[]>([]);
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<string | null>(null);
@@ -114,22 +152,73 @@ export function CareStepsPage() {
     }
   };
 
-  const changeDate = (days: number) => {
-    const next = new Date(selectedDate);
-    next.setDate(next.getDate() + days);
-    setSelectedDate(next);
-  };
+  const sections = useMemo(() => groupStepsByDate(steps), [steps]);
 
-  // Date-wise filtering is deferred for now: show every care step (open and
-  // completed), with the actionable (incomplete) ones first, newest first.
-  const visible = steps
-    .slice()
-    .sort((a, b) => {
-      const aOpen = stepIsOpen(a) ? 0 : 1;
-      const bOpen = stepIsOpen(b) ? 0 : 1;
-      if (aOpen !== bOpen) return aOpen - bOpen;
-      return stepDue(b.due_date).localeCompare(stepDue(a.due_date));
-    });
+  const renderStepCard = (step: CareStep) => {
+    const lookup = step.state_id || step.step_id;
+    const open = stepIsOpen(step);
+    const time = stepTime(step.due_date);
+    const due = stepDue(step.due_date);
+    return (
+      <motion.div
+        key={lookup}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden"
+      >
+        <div className={`p-4 ${open ? '' : 'opacity-60'}`}>
+          <div className="flex items-start gap-3">
+            <div className="w-11 h-11 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
+              {busy === lookup ? (
+                <div className="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <ListChecks className="w-5 h-5 text-indigo-600" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-semibold text-gray-900 leading-snug">{stepTitle(step)}</p>
+                {time && (
+                  <span className="flex-shrink-0 text-xs font-medium px-2 py-1 rounded-md bg-indigo-50 text-indigo-700">
+                    {time}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                <span className="text-[11px] px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">Care step</span>
+                {step.pathway_name && (
+                  <span className="text-[11px] px-2 py-0.5 rounded bg-gray-100 text-gray-600">{step.pathway_name}</span>
+                )}
+                {due && due < todayKey && open && (
+                  <span className="text-[11px] px-2 py-0.5 rounded bg-amber-50 text-amber-700">Overdue</span>
+                )}
+                {!open && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-100 text-emerald-600">
+                    <Check className="w-3 h-3" />
+                    Done
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        {open && (
+          <>
+            <div className="border-t border-gray-100" />
+            <button
+              type="button"
+              disabled={busy === lookup}
+              onClick={() => markDone(step)}
+              className="w-full flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-emerald-600 hover:bg-emerald-50 disabled:opacity-50"
+            >
+              <Check className="w-4 h-4" />
+              {busy === lookup ? 'Saving' : 'Complete'}
+            </button>
+          </>
+        )}
+      </motion.div>
+    );
+  };
 
   return (
     <div className="min-h-full bg-gray-50">
@@ -137,16 +226,6 @@ export function CareStepsPage() {
         <div className="mb-4">
           <h1 className="text-2xl font-bold text-gray-900">Care steps</h1>
           <p className="text-sm text-gray-500 mt-1">View your care tasks and mark them done</p>
-        </div>
-
-        <div className="flex items-center justify-between bg-white rounded-xl p-3 mb-4 border border-gray-100">
-          <button type="button" onClick={() => changeDate(-1)} className="p-2 hover:bg-gray-100 rounded-lg">
-            <ChevronLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          <span className="font-semibold text-gray-900">{formatDate(selectedDate)}</span>
-          <button type="button" onClick={() => changeDate(1)} className="p-2 hover:bg-gray-100 rounded-lg">
-            <ChevronRight className="w-5 h-5 text-gray-600" />
-          </button>
         </div>
 
         {isLoading ? (
@@ -157,7 +236,7 @@ export function CareStepsPage() {
           <div className="bg-white rounded-xl border border-gray-100 p-8 text-center">
             <p className="text-sm text-red-600">{error}</p>
           </div>
-        ) : visible.length === 0 ? (
+        ) : sections.length === 0 ? (
           <div className="text-center py-16 px-6">
             <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
               <ListChecks className="w-10 h-10 text-gray-400" />
@@ -168,71 +247,25 @@ export function CareStepsPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-3 pb-8">
+          <div className="space-y-6 pb-8">
             {error && <p className="text-sm text-red-600">{error}</p>}
-            {visible.map((step) => {
-              const lookup = step.state_id || step.step_id;
-              const open = stepIsOpen(step);
-              const time = stepTime(step.due_date);
-              const due = stepDue(step.due_date);
+            {sections.map((section) => {
+              const heading = sectionDateLabel(section.dateKey, todayKey);
+              const sublabel =
+                section.dateKey !== 'unknown' && (heading === 'Today' || heading === 'Yesterday')
+                  ? formatDate(new Date(`${section.dateKey}T12:00:00`))
+                  : null;
               return (
-                <motion.div
-                  key={lookup}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden"
-                >
-                  <div className={`p-4 ${open ? '' : 'opacity-60'}`}>
-                    <div className="flex items-start gap-3">
-                      <div className="w-11 h-11 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                        {busy === lookup ? (
-                          <div className="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <ListChecks className="w-5 h-5 text-indigo-600" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="font-semibold text-gray-900 leading-snug">{stepTitle(step)}</p>
-                          {time && (
-                            <span className="flex-shrink-0 text-xs font-medium px-2 py-1 rounded-md bg-indigo-50 text-indigo-700">
-                              {time}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                          <span className="text-[11px] px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">Care step</span>
-                          {step.pathway_name && (
-                            <span className="text-[11px] px-2 py-0.5 rounded bg-gray-100 text-gray-600">{step.pathway_name}</span>
-                          )}
-                          {due && due < todayKey && open && (
-                            <span className="text-[11px] px-2 py-0.5 rounded bg-amber-50 text-amber-700">Overdue</span>
-                          )}
-                          {!open && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-100 text-emerald-600">
-                              <Check className="w-3 h-3" />
-                              Done
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                <section key={section.dateKey}>
+                  <div className="flex items-baseline justify-between gap-2 mb-3 px-0.5">
+                    <h2 className="text-base font-semibold text-gray-900">{heading}</h2>
+                    {sublabel && <span className="text-xs text-gray-500">{sublabel}</span>}
+                    <span className="text-xs font-medium text-gray-500 ml-auto">
+                      {section.steps.length} step{section.steps.length === 1 ? '' : 's'}
+                    </span>
                   </div>
-                  {open && (
-                    <>
-                      <div className="border-t border-gray-100" />
-                      <button
-                        type="button"
-                        disabled={busy === lookup}
-                        onClick={() => markDone(step)}
-                        className="w-full flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-emerald-600 hover:bg-emerald-50 disabled:opacity-50"
-                      >
-                        <Check className="w-4 h-4" />
-                        {busy === lookup ? 'Saving' : 'Complete'}
-                      </button>
-                    </>
-                  )}
-                </motion.div>
+                  <div className="space-y-3">{section.steps.map((step) => renderStepCard(step))}</div>
+                </section>
               );
             })}
           </div>
