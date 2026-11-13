@@ -37,24 +37,29 @@ export function useInternetReachability(intervalMs = DEFAULT_INTERVAL_MS): boole
   );
   const probeIdRef = useRef(0);
 
-  const runProbe = useCallback(async () => {
+  const probe = useCallback(() => {
+    const probeId = ++probeIdRef.current;
+    void probeInternetReachability().then((reachable) => {
+      if (probeId === probeIdRef.current) {
+        setIsReachable(reachable);
+      }
+    });
+  }, []);
+
+  const runProbe = useCallback(() => {
     if (!navigator.onLine) {
       setIsReachable(false);
       return;
     }
-
-    const probeId = ++probeIdRef.current;
-    const reachable = await probeInternetReachability();
-    if (probeId === probeIdRef.current) {
-      setIsReachable(reachable);
-    }
-  }, []);
+    probe();
+  }, [probe]);
 
   useEffect(() => {
-    void runProbe();
+    // Offline at mount needs no probe: the state already starts from navigator.onLine.
+    if (navigator.onLine) probe();
 
     const interval = window.setInterval(() => {
-      void runProbe();
+      runProbe();
     }, intervalMs);
 
     const handleOffline = () => {
@@ -64,12 +69,12 @@ export function useInternetReachability(intervalMs = DEFAULT_INTERVAL_MS): boole
 
     const handleOnline = () => {
       setIsReachable(true);
-      void runProbe();
+      runProbe();
     };
 
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
-        void runProbe();
+        runProbe();
       }
     };
 
@@ -84,7 +89,7 @@ export function useInternetReachability(intervalMs = DEFAULT_INTERVAL_MS): boole
       window.removeEventListener('online', handleOnline);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [runProbe, intervalMs]);
+  }, [probe, runProbe, intervalMs]);
 
   return isReachable;
 }

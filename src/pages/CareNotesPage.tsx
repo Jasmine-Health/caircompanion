@@ -31,8 +31,8 @@ export function CareNotesPage() {
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const [replying, setReplying] = useState<string | null>(null);
 
+  // Only the first load: the page starts with the spinner on.
   const load = () => {
-    setIsLoading(true);
     getCareTeamNotes()
       .then((data) => {
         setNotes(data);

@@ -26,20 +26,19 @@ export function ConnectorsPage() {
   const [snackbar, setSnackbar] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
+  const fetchConnectors = () =>
+    getConnectors()
+      .then(setConnectors)
+      .catch(() => setSnackbar({ message: 'Failed to load connectors', type: 'error' }))
+      .finally(() => setIsLoading(false));
+
   const loadConnectors = async () => {
     setIsLoading(true);
-    try {
-      const data = await getConnectors();
-      setConnectors(data);
-    } catch {
-      setSnackbar({ message: 'Failed to load connectors', type: 'error' });
-    } finally {
-      setIsLoading(false);
-    }
+    await fetchConnectors();
   };
 
   useEffect(() => {
-    loadConnectors();
+    fetchConnectors();
   }, []);
 
   useEffect(() => {

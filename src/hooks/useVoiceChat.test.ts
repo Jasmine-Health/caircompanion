@@ -3,10 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { installDefaultWebSocket } from '../test/defaultWebSocket';
 import { useVoiceChat } from './useVoiceChat';
 
-let latestSocket: MockWebSocket | null = null;
-let socketCount = 0;
 
 class MockWebSocket {
+  /** The socket the hook opened most recently. */
+  static latest: MockWebSocket | null = null;
   static OPEN = 1;
   static CLOSED = 3;
   readyState = MockWebSocket.OPEN;
@@ -22,8 +22,7 @@ class MockWebSocket {
 
   constructor(url: string) {
     this.url = url;
-    socketCount += 1;
-    latestSocket = this;
+    MockWebSocket.latest = this;
     queueMicrotask(() => {
       this.onopen?.();
     });
@@ -62,8 +61,7 @@ function createAudioContextMock() {
 
 describe('useVoiceChat', () => {
   beforeEach(() => {
-    latestSocket = null;
-    socketCount = 0;
+    MockWebSocket.latest = null;
     localStorage.setItem('access_token', 'token');
     vi.stubGlobal('WebSocket', MockWebSocket as unknown as typeof WebSocket);
     vi.stubGlobal(
@@ -98,7 +96,7 @@ describe('useVoiceChat', () => {
     await waitFor(() => expect(result.current.status).toBe('connecting'));
 
     act(() => {
-      latestSocket?.onmessage?.({ data: JSON.stringify({ type: 'ready' }) } as MessageEvent);
+      MockWebSocket.latest?.onmessage?.({ data: JSON.stringify({ type: 'ready' }) } as MessageEvent);
     });
 
     await waitFor(() => expect(result.current.status).toBe('ready'));
@@ -108,13 +106,13 @@ describe('useVoiceChat', () => {
     });
 
     act(() => {
-      latestSocket?.onmessage?.({ data: JSON.stringify({ type: 'user_transcript', content: 'Hello' }) } as MessageEvent);
-      latestSocket?.onmessage?.({ data: JSON.stringify({ type: 'assistant_transcript', content: 'Hi there' }) } as MessageEvent);
-      latestSocket?.onmessage?.({ data: JSON.stringify({ type: 'audio_start' }) } as MessageEvent);
-      latestSocket?.onmessage?.({ data: JSON.stringify({ type: 'audio_end' }) } as MessageEvent);
-      latestSocket?.onmessage?.({ data: JSON.stringify({ type: 'speech_started' }) } as MessageEvent);
-      latestSocket?.onmessage?.({ data: JSON.stringify({ type: 'error', content: 'Server busy' }) } as MessageEvent);
-      latestSocket?.onmessage?.({ data: JSON.stringify({ type: 'unknown_event' }) } as MessageEvent);
+      MockWebSocket.latest?.onmessage?.({ data: JSON.stringify({ type: 'user_transcript', content: 'Hello' }) } as MessageEvent);
+      MockWebSocket.latest?.onmessage?.({ data: JSON.stringify({ type: 'assistant_transcript', content: 'Hi there' }) } as MessageEvent);
+      MockWebSocket.latest?.onmessage?.({ data: JSON.stringify({ type: 'audio_start' }) } as MessageEvent);
+      MockWebSocket.latest?.onmessage?.({ data: JSON.stringify({ type: 'audio_end' }) } as MessageEvent);
+      MockWebSocket.latest?.onmessage?.({ data: JSON.stringify({ type: 'speech_started' }) } as MessageEvent);
+      MockWebSocket.latest?.onmessage?.({ data: JSON.stringify({ type: 'error', content: 'Server busy' }) } as MessageEvent);
+      MockWebSocket.latest?.onmessage?.({ data: JSON.stringify({ type: 'unknown_event' }) } as MessageEvent);
     });
     expect(result.current.transcript).toBe('');
     expect(result.current.error).toBe('Server busy');
@@ -130,7 +128,7 @@ describe('useVoiceChat', () => {
   it('plays binary audio chunks while speaking', async () => {
     const { result } = renderHook(() => useVoiceChat());
     act(() => {
-      latestSocket?.onmessage?.({ data: JSON.stringify({ type: 'ready' }) } as MessageEvent);
+      MockWebSocket.latest?.onmessage?.({ data: JSON.stringify({ type: 'ready' }) } as MessageEvent);
     });
     await waitFor(() => expect(result.current.status).toBe('ready'));
 
@@ -139,9 +137,9 @@ describe('useVoiceChat', () => {
     });
 
     act(() => {
-      latestSocket?.onmessage?.({ data: new ArrayBuffer(8) } as MessageEvent);
-      latestSocket?.onerror?.();
-      latestSocket?.onclose?.({ code: 1006 } as CloseEvent);
+      MockWebSocket.latest?.onmessage?.({ data: new ArrayBuffer(8) } as MessageEvent);
+      MockWebSocket.latest?.onerror?.();
+      MockWebSocket.latest?.onclose?.({ code: 1006 } as CloseEvent);
     });
 
     expect(result.current.status).toBe('disconnected');
@@ -156,7 +154,7 @@ describe('useVoiceChat', () => {
 
     const { result } = renderHook(() => useVoiceChat());
     act(() => {
-      latestSocket?.onmessage?.({ data: JSON.stringify({ type: 'ready' }) } as MessageEvent);
+      MockWebSocket.latest?.onmessage?.({ data: JSON.stringify({ type: 'ready' }) } as MessageEvent);
     });
     await waitFor(() => expect(result.current.status).toBe('ready'));
 
@@ -166,7 +164,7 @@ describe('useVoiceChat', () => {
 
     expect(result.current.status).toBe('ready');
     expect(result.current.error).toMatch(/denied/i);
-    expect(latestSocket?.send).not.toHaveBeenCalledWith(expect.stringContaining('StartRecording'));
+    expect(MockWebSocket.latest?.send).not.toHaveBeenCalledWith(expect.stringContaining('StartRecording'));
 
     getUserMedia.mockResolvedValueOnce({
       getTracks: () => [{ stop: vi.fn() }],
@@ -183,11 +181,11 @@ describe('useVoiceChat', () => {
   it('stopConversation closes active websocket', async () => {
     const { result } = renderHook(() => useVoiceChat());
     act(() => {
-      latestSocket?.onmessage?.({ data: JSON.stringify({ type: 'ready' }) } as MessageEvent);
+      MockWebSocket.latest?.onmessage?.({ data: JSON.stringify({ type: 'ready' }) } as MessageEvent);
     });
     await waitFor(() => expect(result.current.status).toBe('ready'));
 
-    const closedSocket = latestSocket;
+    const closedSocket = MockWebSocket.latest;
     act(() => {
       result.current.stopConversation();
     });

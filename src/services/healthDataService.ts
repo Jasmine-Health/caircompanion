@@ -114,7 +114,7 @@ export interface CarePlanDetail extends CarePlan {
   // ExecutionPathway plans return structured steps (the real content for most
   // patients, e.g. Thomas); CarePathway plans return activities/instructions.
   steps?: CarePlanStep[];
-  activities: any[];
+  activities: unknown[];
   instructions: Array<{
     section_type: string;
     title: string;

@@ -7,6 +7,17 @@ interface BeforeInstallPromptEvent extends Event {
 
 export type PWAPlatform = 'ios' | 'android' | 'desktop' | 'other';
 
+declare global {
+  interface Window {
+    /** Set by the inline script in index.html when the prompt fires before React mounts. */
+    deferredPrompt?: BeforeInstallPromptEvent | null;
+  }
+  interface Navigator {
+    /** iOS Safari: true when running from the home screen. */
+    standalone?: boolean;
+  }
+}
+
 const getInitialPlatform = (): PWAPlatform => {
   if (typeof window === 'undefined') return 'other';
   const userAgent = window.navigator.userAgent.toLowerCase();
@@ -23,11 +34,14 @@ const getInitialPlatform = (): PWAPlatform => {
 const getInitialInstalled = (): boolean => {
   if (typeof window === 'undefined') return false;
   return window.matchMedia('(display-mode: standalone)').matches || 
-         (window.navigator as any).standalone === true;
+         window.navigator.standalone === true;
 };
 
 export function usePWAInstall() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  // A prompt captured before React mounted is picked up here.
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(
+    () => (typeof window !== 'undefined' && window.deferredPrompt) || null
+  );
   const [isInstalled, setIsInstalled] = useState<boolean>(getInitialInstalled);
   const [showInstructions, setShowInstructions] = useState(false);
   const [platform] = useState<PWAPlatform>(getInitialPlatform);
@@ -39,20 +53,15 @@ export function usePWAInstall() {
     };
 
     const handleDeferredPromptCaptured = () => {
-      if ((window as any).deferredPrompt) {
-        setDeferredPrompt((window as any).deferredPrompt);
+      if (window.deferredPrompt) {
+        setDeferredPrompt(window.deferredPrompt);
       }
     };
-
-    // Check synchronously if the prompt was already captured prior to React mounting
-    if ((window as any).deferredPrompt) {
-      setDeferredPrompt((window as any).deferredPrompt);
-    }
 
     const handleAppInstalled = () => {
       setIsInstalled(true);
       setDeferredPrompt(null);
-      (window as any).deferredPrompt = null;
+      window.deferredPrompt = null;
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -68,7 +77,7 @@ export function usePWAInstall() {
 
   const install = async () => {
     // If the browser has a captured prompt, ensure we reference it
-    const activePrompt = deferredPrompt || (window as any).deferredPrompt;
+    const activePrompt = deferredPrompt || window.deferredPrompt;
 
     if (!activePrompt) {
       // Fallback to custom instructions modal if browser doesn't support native prompt
@@ -85,7 +94,7 @@ export function usePWAInstall() {
       }
 
       setDeferredPrompt(null);
-      (window as any).deferredPrompt = null;
+      window.deferredPrompt = null;
       return outcome === 'accepted';
     } catch (err) {
       console.error('PWA install prompt failed, showing fallback instructions:', err);

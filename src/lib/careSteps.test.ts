@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { stepTitle } from './CareStepsPage';
+import { stepTitle } from './careSteps';
 import type { CareStep } from '../services/healthDataService';
 
 describe('CareStepsPage helpers', () => {

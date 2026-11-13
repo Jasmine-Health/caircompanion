@@ -42,7 +42,7 @@ export function ResetPasswordPage() {
     try {
       await resetPassword({ token, new_password: password });
       setIsSubmitted(true);
-    } catch (err) {
+    } catch {
       setError('Failed to reset password. The link may have expired.');
     } finally {
       setIsLoading(false);

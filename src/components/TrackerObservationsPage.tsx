@@ -40,36 +40,38 @@ export function TrackerObservationsPage({
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const params: { start_date?: string; end_date?: string } = {};
-      if (useDateRange) {
-        const end = new Date().toISOString().split('T')[0];
-        const start = new Date();
-        start.setDate(start.getDate() - 30);
-        params.start_date = start.toISOString().split('T')[0];
-        params.end_date = end;
-      }
-      const data = await fetchData(params);
-      setObservations(data.observations ?? []);
-    } catch (err) {
-      console.error(`Failed to load ${title}:`, err);
-      if (err instanceof APIError) {
-        setError(err.message);
-      } else {
-        setError('Unable to load records right now. Please try again.');
-      }
-      setObservations([]);
-    } finally {
-      setIsLoading(false);
+  const load = useCallback(() => {
+    const params: { start_date?: string; end_date?: string } = {};
+    if (useDateRange) {
+      const end = new Date().toISOString().split('T')[0];
+      const start = new Date();
+      start.setDate(start.getDate() - 30);
+      params.start_date = start.toISOString().split('T')[0];
+      params.end_date = end;
     }
+    return fetchData(params)
+      .then((data) => setObservations(data.observations ?? []))
+      .catch((err: unknown) => {
+        console.error(`Failed to load ${title}:`, err);
+        if (err instanceof APIError) {
+          setError(err.message);
+        } else {
+          setError('Unable to load records right now. Please try again.');
+        }
+        setObservations([]);
+      })
+      .finally(() => setIsLoading(false));
   }, [fetchData, title, useDateRange]);
 
   useEffect(() => {
     load();
   }, [load, reloadKey]);
+
+  const retry = () => {
+    setIsLoading(true);
+    setError(null);
+    setReloadKey((k) => k + 1);
+  };
 
   if (isLoading) {
     return (
@@ -92,7 +94,7 @@ export function TrackerObservationsPage({
             <Icon className={`w-12 h-12 mx-auto mb-3 ${iconColor} opacity-40`} />
             <p className="text-gray-700 font-medium mb-2">Could not load {title.toLowerCase()}</p>
             <p className="text-sm text-gray-500 mb-4 max-w-sm mx-auto">{error}</p>
-            <Button variant="outline" onClick={() => setReloadKey((k) => k + 1)}>
+            <Button variant="outline" onClick={retry}>
               <RefreshCw className="w-4 h-4 mr-2" />
               Try again
             </Button>
