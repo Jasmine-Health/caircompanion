@@ -44,6 +44,8 @@ function Motion({
   );
 }
 
+// Test-only stand-in for framer-motion (aliased in vite.config.ts); never hot-reloaded.
+// eslint-disable-next-line react-refresh/only-export-components
 export const motion = new Proxy(
   {},
   {

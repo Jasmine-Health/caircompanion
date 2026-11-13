@@ -29,30 +29,40 @@ function stepBadgeVariant(status: string | null): 'success' | 'default' {
 }
 
 export function CarePlanDetailModal({ isOpen, onClose, planId, planName }: CarePlanDetailModalProps) {
+  // The plan to show: set while the modal is open, null while it is closed.
+  const openPlanId = isOpen && planId ? planId : null;
+  const [loadedFor, setLoadedFor] = useState(openPlanId);
   const [carePlan, setCarePlan] = useState<CarePlanDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(openPlanId !== null);
   const [error, setError] = useState<string | null>(null);
 
+  // Opening, closing or switching plan starts from a clean state (set during
+  // render, as React recommends, rather than in the effect).
+  if (openPlanId !== loadedFor) {
+    setLoadedFor(openPlanId);
+    setCarePlan(null);
+    setError(null);
+    setIsLoading(openPlanId !== null);
+  }
+
   useEffect(() => {
-    if (isOpen && planId) {
-      setIsLoading(true);
-      setError(null);
-      getCarePlanDetail(planId)
-        .then((data) => {
-          setCarePlan(data);
-        })
-        .catch((err) => {
-          console.error('Failed to load care plan details:', err);
-          setError('Failed to load care plan details');
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    } else {
-      setCarePlan(null);
-      setError(null);
-    }
-  }, [isOpen, planId]);
+    if (!openPlanId) return;
+    let cancelled = false;
+    getCarePlanDetail(openPlanId)
+      .then((data) => {
+        if (!cancelled) setCarePlan(data);
+      })
+      .catch((err) => {
+        console.error('Failed to load care plan details:', err);
+        if (!cancelled) setError('Failed to load care plan details');
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [openPlanId]);
 
   return (
     <AnimatePresence>

@@ -20,6 +20,7 @@ describe('navigation config', () => {
     expect(getPageTitle('/trackers/vitals')).toBe('Vitals');
     expect(getPageTitle('/trackers/unknown')).toBe('Trackers');
     expect(getPageTitle('/unknown')).toBe('CairCompanion');
+    expect(getPageTitle('/checkin/ck_1')).toBe('Check-in');
   });
 
   it('maps paths to destinations', () => {

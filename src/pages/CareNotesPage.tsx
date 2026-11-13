@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ClipboardList, Stethoscope, MessageSquareText, Send, Check } from 'lucide-react';
 import {
   getCareTeamNotes,
-  replyToNurseQuestion,
+  replyInConversation,
   type CareTeamNotes,
   type NurseQuestion,
 } from '../services/healthDataService';
@@ -31,8 +31,8 @@ export function CareNotesPage() {
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const [replying, setReplying] = useState<string | null>(null);
 
+  // Only the first load: the page starts with the spinner on.
   const load = () => {
-    setIsLoading(true);
     getCareTeamNotes()
       .then((data) => {
         setNotes(data);
@@ -60,7 +60,7 @@ export function CareNotesPage() {
     if (!text) return;
     setReplying(question.id);
     try {
-      const result = await replyToNurseQuestion(question.conversation_id, text);
+      const result = await replyInConversation(question.conversation_id, text);
       const careTeamResponse = result?.response?.trim() || null;
       setNotes((prev) =>
         prev

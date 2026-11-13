@@ -190,7 +190,7 @@ describe('page interactions', () => {
       ],
       caregiver_notifications: [],
     });
-    vi.mocked(healthDataService.replyToNurseQuestion).mockResolvedValue({ response: 'Thanks for checking in' });
+    vi.mocked(healthDataService.replyInConversation).mockResolvedValue({ response: 'Thanks for checking in' });
     vi.mocked(healthDataService.getCarePlans).mockResolvedValue({
       patient_id: 'p1',
       count: 1,
@@ -303,7 +303,7 @@ describe('page interactions', () => {
     await user.type(input, 'Feeling better');
     await user.click(screen.getByRole('button', { name: /^Reply$/i }));
     await waitFor(() =>
-      expect(healthDataService.replyToNurseQuestion).toHaveBeenCalledWith('conv-1', 'Feeling better')
+      expect(healthDataService.replyInConversation).toHaveBeenCalledWith('conv-1', 'Feeling better')
     );
   });
 

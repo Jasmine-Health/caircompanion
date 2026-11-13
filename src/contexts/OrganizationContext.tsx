@@ -201,6 +201,9 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// The hook lives with its provider; the only cost is a full reload instead of
+// a hot update when this file changes in development.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useOrganization() {
   const context = useContext(OrganizationContext);
   if (context === undefined) {

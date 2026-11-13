@@ -114,7 +114,7 @@ export interface CarePlanDetail extends CarePlan {
   // ExecutionPathway plans return structured steps (the real content for most
   // patients, e.g. Thomas); CarePathway plans return activities/instructions.
   steps?: CarePlanStep[];
-  activities: any[];
+  activities: unknown[];
   instructions: Array<{
     section_type: string;
     title: string;
@@ -265,11 +265,11 @@ export async function getCareTeamNotes(patientEmail?: string): Promise<CareTeamN
 }
 
 /**
- * Reply once to a nurse's question. Routed through the normal chat endpoint
- * with the question's nq_ conversation_id so CairIQ Map attaches the reply to
- * the originating nurse handoff.
+ * Reply in an existing CairIQ Map conversation through the normal chat
+ * endpoint: a nurse's question (nq_ id, attached to the originating nurse
+ * handoff) or a check-in follow-up from CairCompanion (ckf_ id).
  */
-export async function replyToNurseQuestion(
+export async function replyInConversation(
   conversationId: string,
   message: string,
 ): Promise<{ response?: string }> {

@@ -29,10 +29,12 @@ const CAPTURE_SAMPLE_RATE = 16000;
 // ── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useVoiceChat(): UseVoiceChatReturn {
-  const [status, setStatus] = useState<VoiceChatStatus>('disconnected');
+  // The socket opens on mount, so the first render already says connecting
+  // (or the sign-in error when there is no token).
+  const [status, setStatus] = useState<VoiceChatStatus>(() => (localStorage.getItem('access_token') ? 'connecting' : 'error'));
   const [transcript, setTranscript] = useState('');
   const [transcriptSpeaker, setTranscriptSpeaker] = useState<'user' | 'assistant' | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(() => (localStorage.getItem('access_token') ? null : 'Not authenticated'));
 
   // Refs for mutable state that callbacks close over
   const wsRef = useRef<WebSocket | null>(null);
@@ -52,6 +54,10 @@ export function useVoiceChat(): UseVoiceChatReturn {
   const pendingAudioEndRef = useRef(false);
   const pendingStartRef = useRef(false);
   const startConversationRef = useRef<() => Promise<void>>(async () => {});
+  // Callbacks that call themselves again later (a finished chunk plays the
+  // next one; a dropped socket reconnects) go through refs kept current below.
+  const drainAudioQueueRef = useRef<() => void>(() => {});
+  const connectWebSocketRef = useRef<() => void>(() => {});
 
   // Keep statusRef in sync
   useEffect(() => {
@@ -143,7 +149,7 @@ export function useVoiceChat(): UseVoiceChatReturn {
     source.onended = () => {
       // When this chunk finishes, try to play more or mark idle
       if (isConversationActiveRef.current) {
-        drainAudioQueue();
+        drainAudioQueueRef.current();
       } else {
         isPlayingRef.current = false;
       }
@@ -239,17 +245,7 @@ export function useVoiceChat(): UseVoiceChatReturn {
 
   // ── WebSocket Connection ────────────────────────────────────────────────
 
-  const connectWebSocket = useCallback(() => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      setError('Not authenticated');
-      setStatus('error');
-      return;
-    }
-
-    setStatus('connecting');
-    setError(null);
-
+  const openSocket = useCallback((token: string) => {
     const wsUrl = `${API_CONFIG.BASE_URL.replace('http', 'ws')}/ws/voice-chat?token=${token}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
@@ -376,12 +372,25 @@ export function useVoiceChat(): UseVoiceChatReturn {
         setStatus('disconnected');
         window.setTimeout(() => {
           if (!wsRef.current && !isConversationActiveRef.current) {
-            connectWebSocket();
+            connectWebSocketRef.current();
           }
         }, 800);
       }
     };
   }, [enqueueAudio, getPlaybackContext, stopAudioPlayback, stopMicrophone]);
+
+  const connectWebSocket = useCallback(() => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      setError('Not authenticated');
+      setStatus('error');
+      return;
+    }
+
+    setStatus('connecting');
+    setError(null);
+    openSocket(token);
+  }, [openSocket]);
 
   // ── Public API ──────────────────────────────────────────────────────────
 
@@ -423,7 +432,11 @@ export function useVoiceChat(): UseVoiceChatReturn {
     setStatus('speaking');
   }, [startMicrophone, getPlaybackContext, connectWebSocket]);
 
-  startConversationRef.current = startConversation;
+  useEffect(() => {
+    drainAudioQueueRef.current = drainAudioQueue;
+    connectWebSocketRef.current = connectWebSocket;
+    startConversationRef.current = startConversation;
+  }, [drainAudioQueue, connectWebSocket, startConversation]);
 
   const stopConversation = useCallback(() => {
     isConversationActiveRef.current = false;
@@ -465,7 +478,8 @@ export function useVoiceChat(): UseVoiceChatReturn {
   // ── Connect on mount, disconnect on unmount ─────────────────────────────
 
   useEffect(() => {
-    connectWebSocket();
+    const token = localStorage.getItem('access_token');
+    if (token) openSocket(token);
 
     return () => {
       isConversationActiveRef.current = false;

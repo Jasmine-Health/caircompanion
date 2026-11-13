@@ -76,30 +76,36 @@ export function AlertsListPage({
 
   const dateString = selectedDate.toISOString().split('T')[0];
 
-  const loadAlerts = useCallback(async () => {
+  // A new date or list type shows the spinner again (set during render, as
+  // React recommends, rather than in the effect).
+  const loadKey = `${dateString}|${alertType ?? ''}`;
+  const [loadedKey, setLoadedKey] = useState(loadKey);
+  if (loadKey !== loadedKey) {
+    setLoadedKey(loadKey);
     setIsLoading(true);
     setLoadError(null);
-    try {
-      const params: { date: string; is_active: boolean; type?: string } = {
-        date: dateString,
-        is_active: true,
-      };
-      if (alertType) params.type = alertType;
-      const data = await getAlerts(params);
-      setAlerts(data.alerts);
-    } catch (error) {
-      console.error('Failed to load alerts:', error);
-      setLoadError(
-        formatApiError(
-          error,
-          alertType === 'appointment'
-            ? 'Could not load appointments. Try another date or try again later.'
-            : 'Could not load alerts. Try another date or try again later.',
-        ),
-      );
-    } finally {
-      setIsLoading(false);
-    }
+  }
+
+  const loadAlerts = useCallback(() => {
+    const params: { date: string; is_active: boolean; type?: string } = {
+      date: dateString,
+      is_active: true,
+    };
+    if (alertType) params.type = alertType;
+    return getAlerts(params)
+      .then((data) => setAlerts(data.alerts))
+      .catch((error: unknown) => {
+        console.error('Failed to load alerts:', error);
+        setLoadError(
+          formatApiError(
+            error,
+            alertType === 'appointment'
+              ? 'Could not load appointments. Try another date or try again later.'
+              : 'Could not load alerts. Try another date or try again later.',
+          ),
+        );
+      })
+      .finally(() => setIsLoading(false));
   }, [dateString, alertType]);
 
   useEffect(() => {

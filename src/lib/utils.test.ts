@@ -3,7 +3,8 @@ import { cn, formatDate, formatDateTime, formatTime } from './utils';
 
 describe('shared formatting utilities', () => {
   it('merges conditional and conflicting Tailwind classes', () => {
-    expect(cn('px-2', false && 'hidden', 'px-4', 'text-sm')).toBe('px-4 text-sm');
+    const hidden = false;
+    expect(cn('px-2', hidden && 'hidden', 'px-4', 'text-sm')).toBe('px-4 text-sm');
   });
 
   it('formats dates from Date and string inputs', () => {

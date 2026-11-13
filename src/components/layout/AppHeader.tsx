@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Menu, LogOut } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useOrganization } from '../../contexts/OrganizationContext';
-import { getPageTitle } from '../../config/navigation';
 
 interface AppHeaderProps {
   title?: string;
@@ -90,8 +89,4 @@ export function AppHeader({ title, onMenuTap }: AppHeaderProps) {
       )}
     </>
   );
-}
-
-export function useHeaderTitle(pathname: string): string {
-  return getPageTitle(pathname);
 }

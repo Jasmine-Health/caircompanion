@@ -63,6 +63,11 @@ export const API_ENDPOINTS = {
   TRACKERS_V2_MOOD: '/trackers_v2/mood',
   TRACKERS_V2_SUMMARY: '/trackers_v2/summary',
   
+  // Program check-ins (jasmine-backend proxy to CairIQ Map /api/programs)
+  CHECKINS_OPEN: '/checkins/open',
+  CHECKIN: (checkinId: string) => `/checkins/${encodeURIComponent(checkinId)}`,
+  CHECKIN_ANSWERS: (checkinId: string) => `/checkins/${encodeURIComponent(checkinId)}/answers`,
+
   // Cairgiver
   CAIRGIVER_REQUEST: '/cairgiver/request',
   CAIRGIVER_PATIENTS: '/cairgiver/patients',

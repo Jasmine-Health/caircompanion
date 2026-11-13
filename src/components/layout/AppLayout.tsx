@@ -2,15 +2,16 @@ import { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { BottomNav } from './BottomNav';
-import { AppHeader, useHeaderTitle } from './AppHeader';
+import { AppHeader } from './AppHeader';
 import { DrawerMenu } from './DrawerMenu';
-import { getDestinationFromPath } from '../../config/navigation';
+import { getDestinationFromPath, getPageTitle } from '../../config/navigation';
+import { CheckinBanner } from '../checkin/CheckinBanner';
 
 export function AppLayout() {
   const location = useLocation();
   const isChatPage = location.pathname === '/chat';
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const headerTitle = useHeaderTitle(location.pathname);
+  const headerTitle = getPageTitle(location.pathname);
   const selectedDestination = getDestinationFromPath(location.pathname);
 
   return (
@@ -36,6 +37,7 @@ export function AppLayout() {
             isChatPage ? '' : 'pb-bottom-nav'
           } md:pb-0 md:pt-0`}
         >
+          <CheckinBanner />
           <Outlet />
         </main>
 

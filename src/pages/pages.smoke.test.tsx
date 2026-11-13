@@ -81,7 +81,7 @@ vi.mock('../services/healthDataService', () => ({
     nurse_questions: [],
     caregiver_notifications: [],
   }),
-  replyToNurseQuestion: vi.fn(),
+  replyInConversation: vi.fn(),
   completeCareStep: vi.fn(),
   completeAlert: vi.fn(),
   snoozeAlert: vi.fn(),

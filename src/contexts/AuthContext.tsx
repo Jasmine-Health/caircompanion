@@ -17,7 +17,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => localStorage.getItem('access_token') !== null);
 
   const persistVoicePreference = useCallback(() => {
     resolveUserVoiceModel().catch((error) => {
@@ -34,8 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
+    if (localStorage.getItem('access_token')) {
       getCurrentUser()
         .then((userData) => {
           setUser(userData);
@@ -49,8 +48,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           clearStaleSessionData();
         })
         .finally(() => setIsLoading(false));
-    } else {
-      setIsLoading(false);
     }
   }, [syncTimezone, persistVoicePreference]);
 
@@ -105,6 +102,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// The hook lives with its provider; the only cost is a full reload instead of
+// a hot update when this file changes in development.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

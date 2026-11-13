@@ -1,32 +1,16 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
-import { StrictMode, useState, useEffect } from 'react';
+import { StrictMode } from 'react';
+import { AppShell } from './AppShell';
 
-function AppShell() {
-  const [showSplash, setShowSplash] = useState(true);
-  const [fadeSplash, setFadeSplash] = useState(false);
-
-  useEffect(() => {
-    const fadeTimer = setTimeout(() => setFadeSplash(true), 1500);
-    const removeTimer = setTimeout(() => setShowSplash(false), 1900);
-
-    return () => {
-      clearTimeout(fadeTimer);
-      clearTimeout(removeTimer);
-    };
-  }, []);
-
-  return (
-    <>
-      <div data-testid="app">App content</div>
-      {showSplash && (
-        <div data-testid="splash" data-fading={fadeSplash ? 'true' : 'false'}>
-          Splash
-        </div>
-      )}
-    </>
-  );
-}
+vi.mock('./App.tsx', () => ({ default: () => <div data-testid="app">App content</div> }));
+vi.mock('./components/SplashScreen', () => ({
+  SplashScreen: ({ fading }: { fading: boolean }) => (
+    <div data-testid="splash" data-fading={fading ? 'true' : 'false'}>
+      Splash
+    </div>
+  ),
+}));
 
 describe('AppShell splash timing', () => {
   beforeEach(() => {

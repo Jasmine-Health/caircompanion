@@ -13,7 +13,7 @@ export class DefaultTestWebSocket {
   close = vi.fn();
   send = vi.fn();
 
-  constructor(_url?: string) {
+  constructor() {
     queueMicrotask(() => {
       this.onopen?.();
     });

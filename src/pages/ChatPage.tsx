@@ -46,7 +46,19 @@ export function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const hasInternetRef = useRef(hasInternet);
-  hasInternetRef.current = hasInternet;
+  const [hadInternet, setHadInternet] = useState(hasInternet);
+
+  // Losing the connection ends any reply in progress (set during render, as
+  // React recommends, rather than in an effect).
+  if (hasInternet !== hadInternet) {
+    setHadInternet(hasInternet);
+    if (!hasInternet) setIsTyping(false);
+  }
+
+  // Declared before the socket effect so that effect reads the current value.
+  useEffect(() => {
+    hasInternetRef.current = hasInternet;
+  }, [hasInternet]);
 
   const canSend = hasInternet && isWsOpen;
 
@@ -64,17 +76,9 @@ export function ChatPage() {
   }, [messages]);
 
   useEffect(() => {
-    if (!hasInternet) {
-      setIsTyping(false);
-    }
-  }, [hasInternet]);
-
-  useEffect(() => {
     const token = localStorage.getItem('access_token');
-    if (!token || !hasInternet) {
-      setIsWsOpen(false);
-      return;
-    }
+    // The previous run's cleanup has already marked the socket closed.
+    if (!token || !hasInternet) return;
 
     const wsUrl = `${API_CONFIG.BASE_URL.replace('http', 'ws')}/ws/chat?token=${token}`;
     let cancelled = false;

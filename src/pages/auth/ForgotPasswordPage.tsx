@@ -19,7 +19,7 @@ export function ForgotPasswordPage() {
     try {
       await forgotPassword({ email, role: 'patient' });
       setIsSubmitted(true);
-    } catch (err) {
+    } catch {
       setError('Failed to send reset email. Please try again.');
     } finally {
       setIsLoading(false);

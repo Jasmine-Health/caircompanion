@@ -145,7 +145,7 @@ describe('service layer', () => {
     await healthDataService.getCareSteps();
     await healthDataService.completeCareStep('step-1');
     await healthDataService.getCareTeamNotes('p@example.com');
-    await healthDataService.replyToNurseQuestion('conv-1', 'Feeling fine');
+    await healthDataService.replyInConversation('conv-1', 'Feeling fine');
 
     expect(mockFetchAPI).toHaveBeenCalledWith(
       expect.stringContaining('/summary?date=2026-01-01'),

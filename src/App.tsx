@@ -25,6 +25,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { HealthScorePage } from './pages/HealthScorePage';
 import { ProgressPage } from './pages/ProgressPage';
 import { OrganizationSettingsPage } from './pages/OrganizationSettingsPage';
+import { CheckinPage } from './pages/CheckinPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -105,6 +106,7 @@ function App() {
               <Route path="alerts" element={<AlertsPage />} />
               <Route path="care-steps" element={<CareStepsPage />} />
               <Route path="care-notes" element={<CareNotesPage />} />
+              <Route path="checkin/:checkinId" element={<CheckinPage />} />
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="medications" element={<MedicationsPage />} />
               <Route path="care-plan" element={<CarePlanPage />} />
