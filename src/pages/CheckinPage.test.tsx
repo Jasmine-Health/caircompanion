@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { APIError } from '../config/api';
@@ -61,7 +61,7 @@ describe('CheckinPage', () => {
 
     const first = screen.getByRole('group', { name: mockCheckinView.questions[0].text });
     expect(within(first).getAllByRole('radio').map((r) => (r as HTMLInputElement).value)).toEqual(['better', 'same', 'worse']);
-    expect(screen.getByRole('heading', { level: 2 })).toHaveFocus();
+    await waitFor(() => expect(screen.getByRole('heading', { level: 2 })).toHaveFocus());
     expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Back' })).not.toBeInTheDocument();
 
@@ -89,7 +89,7 @@ describe('CheckinPage', () => {
     renderPage();
     await answerAll(user);
 
-    expect(screen.getByRole('heading', { name: 'Check your answers' })).toHaveFocus();
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Check your answers' })).toHaveFocus());
     expect(screen.getByText('Worse')).toBeInTheDocument();
     expect(screen.getByText('No')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
