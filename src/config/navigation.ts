@@ -109,6 +109,7 @@ export const pageTitles: Record<string, string> = {
 
 export function getPageTitle(pathname: string): string {
   if (pageTitles[pathname]) return pageTitles[pathname];
+  if (pathname.startsWith('/checkin/')) return 'Check-in';
   if (pathname.startsWith('/trackers/')) {
     const trackerId = pathname.split('/')[2];
     const names: Record<string, string> = {

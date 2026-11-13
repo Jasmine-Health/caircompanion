@@ -5,6 +5,7 @@ import { BottomNav } from './BottomNav';
 import { AppHeader, useHeaderTitle } from './AppHeader';
 import { DrawerMenu } from './DrawerMenu';
 import { getDestinationFromPath } from '../../config/navigation';
+import { CheckinBanner } from '../checkin/CheckinBanner';
 
 export function AppLayout() {
   const location = useLocation();
@@ -36,6 +37,7 @@ export function AppLayout() {
             isChatPage ? '' : 'pb-bottom-nav'
           } md:pb-0 md:pt-0`}
         >
+          <CheckinBanner />
           <Outlet />
         </main>
 
